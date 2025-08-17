@@ -1,0 +1,156 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap");
+@import "tailwindcss";
+
+/* Add your design tokens here */
+@theme {
+  /* Primary color palette (brand: #48aab1) */
+  --color-primary-50: #e6f7f8;
+  --color-primary-100: #c2ecef;
+  --color-primary-200: #99e0e5;
+  --color-primary-300: #6fd3db;
+  --color-primary-400: #48aab1;
+  --color-primary-500: #36898f;
+  --color-primary-600: #25696e;
+  --color-primary-700: #18494d;
+  --color-primary-800: #0c292c;
+  --color-primary-900: #051415;
+  --color-primary: #48aab1;
+  --color-primary-foreground: white;
+
+  /* Secondary color palette */
+  --color-secondary-50: #fffbeb;
+  --color-secondary-100: #fef3c7;
+  --color-secondary-200: #fde68a;
+  --color-secondary-300: #fcd34d;
+  --color-secondary-400: #ffc857;
+  --color-secondary-500: #f59e0b;
+  --color-secondary-600: #d97706;
+  --color-secondary-700: #b45309;
+  --color-secondary-800: #92400e;
+  --color-secondary-900: #78350f;
+  --color-secondary-950: #451a03;
+  --color-secondary: #ffc857;
+  --color-secondary-foreground: white;
+
+  /* Additional colors */
+  --color-background: #f9fafb;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-input: #f3f4f6;
+  --color-ring: #48aab1;
+  --color-foreground: #1e293b;
+  --color-card: #ffffff;
+  --color-card-foreground: #1e293b;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1e293b;
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #64748b;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #1e293b;
+  --color-destructive: #e74c3c;
+  --color-destructive-foreground: #ffffff;
+  --color-success: #2ecc71;
+  --color-success-foreground: #ffffff;
+  --color-info: #3498db;
+  --color-info-foreground: #ffffff;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+}
+
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+@layer base {
+  * {
+    border-color: #e5e7eb;
+  }
+
+  body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    background-color: #f9fafb;
+    color: #1e293b;
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #1e293b;
+    font-family: "Poppins", "Inter", system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  p {
+    color: #64748b;
+    line-height: 1.6;
+  }
+}
+
+@layer components {
+  .gradient-bg {
+    background: linear-gradient(135deg, #48aab1 0%, #36898f 100%);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #48aab1 0%, #36898f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-shadow {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .hover-lift {
+    transition: all 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:bg-primary-600 hover:shadow-lg transform hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:bg-secondary-600 hover:shadow-lg transform hover:-translate-y-0.5;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300;
+  }
+
+  .nav-link {
+    @apply text-text-secondary hover:text-primary transition-colors duration-300 font-medium;
+  }
+
+  .nav-link.active {
+    @apply text-primary;
+  }
+
+  .sidebar-link {
+    @apply flex items-center px-4 py-3 text-text-secondary hover:text-primary hover:bg-accent rounded-lg transition-all duration-300 font-medium;
+  }
+
+  .sidebar-link.active {
+    @apply text-primary bg-primary/10 border-r-2 border-primary;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
