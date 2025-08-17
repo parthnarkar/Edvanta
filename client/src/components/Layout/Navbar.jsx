@@ -43,9 +43,6 @@ export function Navbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="nav-link">
-              Home
-            </Link>
             {user && (
               <Link to="/dashboard" className="nav-link">
                 Dashboard
