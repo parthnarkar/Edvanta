@@ -177,4 +177,4 @@ Early scaffold • Backlog: implement integrations, persistence layer, and auth 
 
 Made with a focus on modularity so each vertical (visuals, quizzes, tutor, roadmap, resume) can evolve independently.
 
-Testing Discord Webhook - 2 
+Testing Discord Webhook - 3
