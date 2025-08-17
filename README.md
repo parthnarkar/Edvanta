@@ -1,9 +1,9 @@
 <div align="center">
 	<img src="client/public/edvanta-logo.png" alt="Edvanta" height="90" />
-  
-	# Edvanta
-	**AI‑powered personalised learning & career acceleration platform**
 </div>
+  
+# Edvanta
+**AI‑powered personalised learning & career acceleration platform**
 
 ## Overview
 
