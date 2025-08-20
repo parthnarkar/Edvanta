@@ -3,6 +3,9 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+      },
       colors: {
         primary: {
           DEFAULT: "#4aaab1",
@@ -37,7 +40,31 @@ export default {
         "accent-from": "#7f5af0",
         "accent-to": "#4aaab1",
       }),
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+          },
+        },
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      addUtilities({
+        '.line-clamp-2': {
+          display: '-webkit-box',
+          '-webkit-line-clamp': '2',
+          '-webkit-box-orient': 'vertical',
+          overflow: 'hidden',
+        },
+        '.line-clamp-3': {
+          display: '-webkit-box',
+          '-webkit-line-clamp': '3',
+          '-webkit-box-orient': 'vertical',
+          overflow: 'hidden',
+        },
+      })
+    }
+  ],
 };

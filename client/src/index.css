@@ -66,11 +66,23 @@
     border-color: #e5e7eb;
   }
 
+  html {
+    /* Enable smooth scrolling */
+    scroll-behavior: smooth;
+    /* Prevent horizontal overflow */
+    overflow-x: hidden;
+  }
+
   body {
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     background-color: #f9fafb;
     color: #1e293b;
     line-height: 1.6;
+    /* Prevent horizontal overflow */
+    overflow-x: hidden;
+    /* Optimize for mobile */
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1,
@@ -83,11 +95,30 @@
     font-family: "Poppins", "Inter", system-ui, -apple-system, sans-serif;
     font-weight: 700;
     line-height: 1.2;
+    /* Responsive text scaling */
+    word-wrap: break-word;
+    hyphens: auto;
   }
 
   p {
     color: #64748b;
     line-height: 1.6;
+    word-wrap: break-word;
+  }
+
+  /* Mobile-first responsive typography */
+  h1 { @apply text-2xl sm:text-3xl lg:text-4xl xl:text-5xl; }
+  h2 { @apply text-xl sm:text-2xl lg:text-3xl xl:text-4xl; }
+  h3 { @apply text-lg sm:text-xl lg:text-2xl xl:text-3xl; }
+  h4 { @apply text-base sm:text-lg lg:text-xl xl:text-2xl; }
+  h5 { @apply text-sm sm:text-base lg:text-lg xl:text-xl; }
+  h6 { @apply text-xs sm:text-sm lg:text-base xl:text-lg; }
+
+  /* Fix viewport issues on mobile */
+  @media screen and (max-width: 768px) {
+    body {
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
   }
 }
 
@@ -152,5 +183,133 @@
 
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Mobile responsive utilities */
+  .mobile-menu-slide {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .mobile-menu-backdrop {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  /* Safe area for mobile devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Responsive text sizes */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl lg:text-4xl;
+  }
+
+  /* Responsive spacing */
+  .space-responsive {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .p-responsive {
+    @apply p-3 sm:p-4 lg:p-6;
+  }
+
+  .px-responsive {
+    @apply px-3 sm:px-4 lg:px-6;
+  }
+
+  .py-responsive {
+    @apply py-3 sm:py-4 lg:py-6;
+  }
+
+  /* Glassmorphic styles */
+  .glass-backdrop {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .glass-button {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .glass-input {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-input:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(72, 170, 177, 0.5);
+  }
+
+  .quiz-modal-enter {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+
+  .quiz-modal-enter-active {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    transition: all 0.3s ease;
+  }
+
+  .quiz-modal-exit {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  .quiz-modal-exit-active {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s ease;
   }
 }

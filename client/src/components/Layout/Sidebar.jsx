@@ -27,9 +27,9 @@ export function Sidebar({ className }) {
   const location = useLocation()
 
   return (
-    <aside className={cn("w-64 bg-surface border-r border-border min-h-screen shadow-soft", className)}>
-      <div className="p-6">
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-6">
+    <aside className={cn("hidden md:block w-64 bg-white border-r border-gray-200 min-h-screen shadow-sm", className)}>
+      <div className="p-4 md:p-6">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 md:mb-6">
           Learning Tools
         </h2>
         <nav className="space-y-1">
@@ -40,14 +40,17 @@ export function Sidebar({ className }) {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "sidebar-link",
+                  "sidebar-link group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200",
                   isActive
-                    ? "active"
-                    : ""
+                    ? "bg-primary/10 text-primary border-l-4 border-primary"
+                    : "text-gray-700 hover:bg-primary/5 hover:text-primary"
                 )}
               >
-                <item.icon className="h-5 w-5 mr-3 flex-shrink-0" />
-                {item.name}
+                <item.icon className={cn(
+                  "h-5 w-5 mr-3 flex-shrink-0 transition-colors duration-200",
+                  isActive ? "text-primary" : "text-gray-500 group-hover:text-primary"
+                )} />
+                <span className="truncate">{item.name}</span>
               </Link>
             )
           })}

@@ -17,6 +17,9 @@ import { Dashboard } from "./pages/Dashboard";
 import { VisualGenerator } from "./pages/tools/VisualGenerator";
 import { DoubtSolving } from "./pages/tools/DoubtSolving";
 import { Quizzes } from "./pages/tools/Quizzes";
+import { ConversationalTutor } from "./pages/tools/ConversationalTutor";
+import { Roadmap } from "./pages/tools/Roadmap";
+import { ResumeBuilder } from "./pages/tools/ResumeBuilder";
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -40,7 +43,9 @@ function DashboardLayout({ children }) {
       <Navbar />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 md:p-6 min-h-[calc(100vh-4rem)] overflow-x-hidden">
+          {children}
+        </main>
       </div>
     </div>
   );
@@ -128,18 +133,12 @@ function App() {
           }
         />
 
-        {/* Placeholder routes for remaining tools */}
         <Route
           path="/tools/conversational-tutor"
           element={
             <ProtectedRoute>
               <DashboardLayout>
-                <div className="text-center py-20">
-                  <h1 className="text-2xl font-bold mb-4">Voice Tutor</h1>
-                  <p className="text-gray-600">
-                    Coming Soon - Interactive voice-based learning with AI
-                  </p>
-                </div>
+                <ConversationalTutor />
               </DashboardLayout>
             </ProtectedRoute>
           }
@@ -150,13 +149,7 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardLayout>
-                <div className="text-center py-20">
-                  <h1 className="text-2xl font-bold mb-4">Career Roadmap</h1>
-                  <p className="text-gray-600">
-                    Coming Soon - Personalized learning paths and career
-                    guidance
-                  </p>
-                </div>
+                <Roadmap />
               </DashboardLayout>
             </ProtectedRoute>
           }
@@ -167,12 +160,7 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardLayout>
-                <div className="text-center py-20">
-                  <h1 className="text-2xl font-bold mb-4">Resume Builder</h1>
-                  <p className="text-gray-600">
-                    Coming Soon - AI-powered resume optimization and ATS scoring
-                  </p>
-                </div>
+                <ResumeBuilder />
               </DashboardLayout>
             </ProtectedRoute>
           }
