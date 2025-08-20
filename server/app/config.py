@@ -31,6 +31,8 @@ class Config:
     # CORS
     ALLOWED_ORIGINS: List[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
 
-    # Future: database URI, caching layer, etc.
-    # SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
-    # SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # MongoDB Credentials
+    MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://tanish-jain-225:tanishjain02022005@cluster0.578qvco.mongodb.net/")
+    MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "edvanta")
+    MONGODB_COLLECTION_NAME_1 = os.getenv("MONGODB_COLLECTION_NAME_1", "quizzes")
+    MONGODB_COLLECTION_NAME_2 = os.getenv("MONGODB_COLLECTION_NAME_2", "quiz_history")

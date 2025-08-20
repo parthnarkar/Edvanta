@@ -1,6 +1,9 @@
 Flask==3.1.1
 flask-cors==5.0.0
 
+# Database
+pymongo==4.10.1
+
 # External service SDKs (optional – install when integrating)
 cloudinary==1.41.0
 google-cloud-aiplatform==1.70.0
