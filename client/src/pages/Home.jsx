@@ -103,34 +103,36 @@ function Home() {
       <HeroSpline />
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-surface">
+      <section id="features" className="py-12 sm:py-16 lg:py-20 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 sm:mb-16">
             <Badge variant="secondary" className="mb-4">
               Features
             </Badge>
-            <h2 className="text-4xl font-bold text-text-primary mb-4 text-balance">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary mb-4 text-balance px-4">
               Everything You Need to Excel
             </h2>
-            <p className="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed px-4">
               Our comprehensive platform combines the latest AI technology with
               proven educational methods.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="group transition-all duration-300">
-                <CardHeader>
+              <Card key={index} className="group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <CardHeader className="pb-4">
                   <div
-                    className={`w-12 h-12 rounded-xl bg-gradient-to-r ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-soft`}
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-soft`}
                   >
-                    <feature.icon className="h-6 w-6 text-white" />
+                    <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <CardTitle>{feature.title}</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription>{feature.description}</CardDescription>
+                  <CardDescription className="text-sm sm:text-base leading-relaxed">
+                    {feature.description}
+                  </CardDescription>
                 </CardContent>
               </Card>
             ))}
@@ -139,31 +141,31 @@ function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-background">
+      <section className="py-12 sm:py-16 lg:py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 sm:mb-16">
             <Badge variant="secondary" className="mb-4">
               Process
             </Badge>
-            <h2 className="text-4xl font-bold text-text-primary mb-4 text-balance">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary mb-4 text-balance px-4">
               How Edvanta Works
             </h2>
-            <p className="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed px-4">
               Get started in three simple steps and transform your learning
               experience.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-12">
             {steps.map((step, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-primary-600 text-white text-2xl font-bold flex items-center justify-center mx-auto mb-6 shadow-soft">
+              <div key={index} className="text-center px-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-primary to-primary-600 text-white text-xl sm:text-2xl font-bold flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-soft">
                   {step.number}
                 </div>
-                <h3 className="text-xl font-semibold text-text-primary mb-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-text-primary mb-3 sm:mb-4">
                   {step.title}
                 </h3>
-                <p className="text-text-secondary leading-relaxed">
+                <p className="text-sm sm:text-base text-text-secondary leading-relaxed">
                   {step.description}
                 </p>
               </div>
@@ -173,49 +175,49 @@ function Home() {
       </section>
 
       {/* Comparison */}
-      <section className="py-20 bg-surface">
+      <section className="py-12 sm:py-16 lg:py-20 bg-surface">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 sm:mb-16">
             <Badge variant="secondary" className="mb-4">
               Comparison
             </Badge>
-            <h2 className="text-4xl font-bold text-text-primary mb-4 text-balance">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary mb-4 text-balance px-4">
               Why Choose Edvanta?
             </h2>
-            <p className="text-xl text-text-secondary">
+            <p className="text-base sm:text-lg lg:text-xl text-text-secondary px-4">
               See how we compare to traditional learning platforms.
             </p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <div className="grid grid-cols-3 gap-4 text-center">
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gray-50 border-b">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
                 <div></div>
-                <div className="font-semibold text-primary">Edvanta</div>
-                <div className="font-semibold text-text-secondary">Others</div>
+                <div className="font-semibold text-primary text-sm sm:text-base">Edvanta</div>
+                <div className="font-semibold text-text-secondary text-sm sm:text-base">Others</div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 sm:space-y-4 p-4 sm:p-6">
               {comparisons.map((item, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-3 gap-4 items-center py-3 border-b border-border last:border-b-0"
+                  className="grid grid-cols-3 gap-2 sm:gap-4 items-center py-2 sm:py-3 border-b border-border last:border-b-0"
                 >
-                  <div className="font-medium text-text-primary">
+                  <div className="font-medium text-text-primary text-xs sm:text-sm lg:text-base">
                     {item.feature}
                   </div>
                   <div className="text-center">
                     {item.edvanta ? (
-                      <CheckCircle className="h-5 w-5 text-success mx-auto" />
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success mx-auto" />
                     ) : (
-                      <div className="w-5 h-5 rounded-full bg-muted mx-auto"></div>
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-muted mx-auto"></div>
                     )}
                   </div>
                   <div className="text-center">
                     {item.others ? (
-                      <CheckCircle className="h-5 w-5 text-success mx-auto" />
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success mx-auto" />
                     ) : (
-                      <div className="w-5 h-5 rounded-full bg-muted mx-auto"></div>
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-muted mx-auto"></div>
                     )}
                   </div>
                 </div>
@@ -226,23 +228,23 @@ function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary to-primary-700">
+      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-primary to-primary-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 px-4">
             Ready to Transform Your Learning?
           </h2>
-          <p className="text-xl text-primary-100 mb-8">
+          <p className="text-base sm:text-lg lg:text-xl text-primary-100 mb-6 sm:mb-8 px-4">
             Join thousands of students and professionals already using Edvanta
             to accelerate their growth.
           </p>
           <Button
-            size="xl"
+            size="lg"
             variant="outline"
-            className="bg-white text-primary hover:bg-gray-100 border-white"
+            className="bg-white text-primary hover:bg-gray-100 border-white text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4"
             asChild
           >
             <Link to="/auth/signup">
-              Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+              Get Started Now <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
           </Button>
         </div>

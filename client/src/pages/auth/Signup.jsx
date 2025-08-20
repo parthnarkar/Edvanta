@@ -49,25 +49,25 @@ export function Signup() {
 
   if (step === 1) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-3 sm:p-4">
+        <Card className="w-full max-w-xs sm:max-w-md">
+          <CardHeader className="text-center px-4 sm:px-6">
+            <div className="flex items-center justify-center mb-3 sm:mb-4">
               <img
                 src="/edvanta-logo.png"
                 alt="Edvanta Logo"
-                className="h-10 w-10 mr-2"
+                className="h-8 w-8 sm:h-10 sm:w-10 mr-2"
               />
-              <span className="text-2xl font-bold text-primary">Edvanta</span>
+              <span className="text-xl sm:text-2xl font-bold text-primary">Edvanta</span>
             </div>
-            <CardTitle className="text-2xl">Create Account</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl sm:text-2xl">Create Account</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Start your AI-powered learning journey today
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
             {error && (
-              <div className="bg-primary-50 border border-primary-200 rounded-md p-3 text-sm text-primary-600">
+              <div className="bg-primary-50 border border-primary-200 rounded-md p-3 text-xs sm:text-sm text-primary-600">
                 {error}
               </div>
             )}
@@ -77,42 +77,42 @@ export function Signup() {
                 e.preventDefault();
                 setStep(2);
               }}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4"
             >
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
+              <div className="space-y-1 sm:space-y-2">
+                <label className="text-xs sm:text-sm font-medium">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3 top-2.5 sm:top-3 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                   <Input
                     type="text"
                     placeholder="Enter your full name"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 text-sm sm:text-base py-2 sm:py-3"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+              <div className="space-y-1 sm:space-y-2">
+                <label className="text-xs sm:text-sm font-medium">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-2.5 sm:top-3 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                   <Input
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 text-sm sm:text-base py-2 sm:py-3"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
+              <div className="space-y-1 sm:space-y-2">
+                <label className="text-xs sm:text-sm font-medium">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-2.5 sm:top-3 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                   <Input
                     type="password"
                     placeholder="Create a password"
@@ -120,24 +120,24 @@ export function Signup() {
                     onChange={(e) =>
                       handleInputChange("password", e.target.value)
                     }
-                    className="pl-10"
+                    className="pl-9 sm:pl-10 text-sm sm:text-base py-2 sm:py-3"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Role</label>
+              <div className="space-y-1 sm:space-y-2">
+                <label className="text-xs sm:text-sm font-medium">Role</label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
                     variant={
                       formData.role === "Student" ? "default" : "outline"
                     }
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm py-2 sm:py-3"
                     onClick={() => handleInputChange("role", "Student")}
                   >
-                    <GraduationCap className="h-4 w-4 mr-2" />
+                    <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Student
                   </Button>
                   <Button
@@ -145,22 +145,22 @@ export function Signup() {
                     variant={
                       formData.role === "Professional" ? "default" : "outline"
                     }
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm py-2 sm:py-3"
                     onClick={() => handleInputChange("role", "Professional")}
                   >
-                    <Briefcase className="h-4 w-4 mr-2" />
+                    <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Professional
                   </Button>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full text-sm sm:text-base py-2 sm:py-3">
                 Continue
               </Button>
             </form>
 
             <div className="text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600">
                 Already have an account?{" "}
                 <Link
                   to="/auth/login"
@@ -177,15 +177,15 @@ export function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Choose Your Interests</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-3 sm:p-4">
+      <Card className="w-full max-w-xs sm:max-w-lg">
+        <CardHeader className="text-center px-4 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl">Choose Your Interests</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Help us personalize your learning experience
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
           <UserInterestForm
             initialInterests={formData.interests}
             loading={loading}

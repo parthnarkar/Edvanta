@@ -134,51 +134,51 @@ Would you like me to dive deeper into any of these areas?`,
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b bg-white p-4">
-        <div className="flex items-center gap-3">
-          <MessageSquare className="h-6 w-6 text-blue-600" />
+      <div className="border-b bg-white p-3 sm:p-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">AI Doubt Solving</h1>
-            <p className="text-gray-600">Get instant help with step-by-step explanations</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">AI Doubt Solving</h1>
+            <p className="text-sm sm:text-base text-gray-600">Get instant help with step-by-step explanations</p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col lg:flex-row">
         {/* Chat Area */}
         <div className="flex-1 flex flex-col">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50">
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex gap-3 ${
+                className={`flex gap-2 sm:gap-3 ${
                   message.type === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
                 {message.type === 'bot' && (
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-white" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                   </div>
                 )}
                 
                 <div
-                  className={`max-w-3xl p-4 rounded-lg ${
+                  className={`max-w-[85%] sm:max-w-3xl p-3 sm:p-4 rounded-lg ${
                     message.type === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white border shadow-sm'
                   }`}
                 >
                   <div
-                    className="prose prose-sm max-w-none"
+                    className="prose prose-sm max-w-none text-xs sm:text-sm"
                     dangerouslySetInnerHTML={{
                       __html: formatContent(message.content)
                     }}
                   />
                   
                   {message.sources && (
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs text-gray-500 mb-2">Sources:</p>
+                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t">
+                      <p className="text-xs text-gray-500 mb-1 sm:mb-2">Sources:</p>
                       <div className="flex gap-1 flex-wrap">
                         {message.sources.map((source, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
@@ -190,38 +190,38 @@ Would you like me to dive deeper into any of these areas?`,
                   )}
                   
                   {message.type === 'bot' && (
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-                      <Button variant="ghost" size="sm">
-                        <ThumbsUp className="h-3 w-3" />
+                    <div className="flex items-center gap-1 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t">
+                      <Button variant="ghost" size="sm" className="p-1 sm:p-2">
+                        <ThumbsUp className="h-2 w-2 sm:h-3 sm:w-3" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <ThumbsDown className="h-3 w-3" />
+                      <Button variant="ghost" size="sm" className="p-1 sm:p-2">
+                        <ThumbsDown className="h-2 w-2 sm:h-3 sm:w-3" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <Copy className="h-3 w-3" />
+                      <Button variant="ghost" size="sm" className="p-1 sm:p-2">
+                        <Copy className="h-2 w-2 sm:h-3 sm:w-3" />
                       </Button>
                     </div>
                   )}
                 </div>
                 
                 {message.type === 'user' && (
-                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                   </div>
                 )}
               </div>
             ))}
             
             {isTyping && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
+              <div className="flex gap-2 sm:gap-3">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                 </div>
-                <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
               </div>
@@ -230,15 +230,15 @@ Would you like me to dive deeper into any of these areas?`,
           </div>
 
           {/* Input Area */}
-          <div className="border-t bg-white p-4">
-            <div className="flex gap-2 mb-3">
+          <div className="border-t bg-white p-3 sm:p-4">
+            <div className="flex gap-1 sm:gap-2 mb-2 sm:mb-3 overflow-x-auto">
               {quickSuggestions.map((suggestion, index) => (
                 <Button
                   key={index}
                   variant="outline"
                   size="sm"
                   onClick={() => handleQuickSuggestion(suggestion)}
-                  className="text-xs"
+                  className="text-xs whitespace-nowrap"
                 >
                   {suggestion}
                 </Button>
@@ -252,20 +252,21 @@ Would you like me to dive deeper into any of these areas?`,
                 onChange={(e) => setCurrentMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask your question here..."
-                className="flex-1"
+                className="flex-1 text-sm sm:text-base"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!currentMessage.trim() || isTyping}
+                className="px-3 sm:px-4"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="w-80 border-l bg-white p-4 space-y-4">
+        {/* Sidebar - Hidden on mobile, shown on large screens */}
+        <div className="hidden lg:block w-80 border-l bg-white p-4 space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm">

@@ -86,41 +86,41 @@ export function Dashboard() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-700 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-700 rounded-xl p-4 sm:p-6 text-white">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
               Welcome back, {userProfile?.name || user?.displayName || 'Learner'}! 👋
             </h1>
-            <p className="text-blue-100">
+            <p className="text-sm sm:text-base text-blue-100">
               Ready to continue your learning journey? Let's make today productive!
             </p>
           </div>
-          <div className="hidden md:block">
-            <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center">
-              <BookOpen className="w-12 h-12" />
+          <div className="hidden sm:block flex-shrink-0 ml-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-white/10 rounded-full flex items-center justify-center">
+              <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                 {stat.label}
               </CardTitle>
-              <stat.icon className="h-4 w-4 text-gray-400" />
+              <stat.icon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="text-lg sm:text-2xl font-bold text-gray-900">{stat.value}</div>
               <p className="text-xs text-green-600 flex items-center mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                {stat.change}
+                <TrendingUp className="h-2 w-2 sm:h-3 sm:w-3 mr-1 flex-shrink-0" />
+                <span className="truncate">{stat.change}</span>
               </p>
             </CardContent>
           </Card>
@@ -129,29 +129,29 @@ export function Dashboard() {
 
       {/* Quick Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
             Quick Actions
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm sm:text-base">
             Jump into your favorite learning tools
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="px-4 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {quickActions.map((action, index) => (
               <Link
                 key={index}
                 to={action.href}
-                className="group p-4 rounded-lg border hover:shadow-md transition-all bg-white hover:bg-gray-50"
+                className="group p-3 sm:p-4 rounded-lg border hover:shadow-md transition-all bg-white hover:bg-gray-50"
               >
-                <div className={`w-10 h-10 rounded-lg ${action.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <action.icon className="h-5 w-5" />
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${action.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                  <action.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                <p className="text-sm text-gray-600">{action.description}</p>
-                <ArrowRight className="h-4 w-4 text-gray-400 mt-2 group-hover:translate-x-1 transition-transform" />
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{action.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{action.description}</p>
+                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mt-2 group-hover:translate-x-1 transition-transform" />
               </Link>
             ))}
           </div>
@@ -159,22 +159,22 @@ export function Dashboard() {
       </Card>
 
       {/* Recent Activity & Continue Learning */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Activity */}
         <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your latest learning sessions</CardDescription>
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="text-lg sm:text-xl">Recent Activity</CardTitle>
+            <CardDescription className="text-sm sm:text-base">Your latest learning sessions</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
             {recentActivities.map((activity, index) => (
-              <div key={index} className="flex items-center gap-4 p-3 rounded-lg bg-gray-50">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                  <activity.icon className="h-5 w-5 text-gray-600" />
+              <div key={index} className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-gray-50">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                  <activity.icon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{activity.title}</h4>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{activity.title}</h4>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                     <span>{activity.time}</span>
                     {activity.score && (
                       <Badge variant="success" className="text-xs">
@@ -190,7 +190,7 @@ export function Dashboard() {
                 </div>
               </div>
             ))}
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full text-sm sm:text-base">
               View All Activity
             </Button>
           </CardContent>
@@ -198,35 +198,35 @@ export function Dashboard() {
 
         {/* Continue Learning */}
         <Card>
-          <CardHeader>
-            <CardTitle>Continue Learning</CardTitle>
-            <CardDescription>Pick up where you left off</CardDescription>
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="text-lg sm:text-xl">Continue Learning</CardTitle>
+            <CardDescription className="text-sm sm:text-base">Pick up where you left off</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 border rounded-lg">
+          <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+            <div className="p-3 sm:p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Web Development Roadmap</h4>
-                <Badge variant="secondary">68% Complete</Badge>
+                <h4 className="font-medium text-sm sm:text-base">Web Development Roadmap</h4>
+                <Badge variant="secondary" className="text-xs">68% Complete</Badge>
               </div>
               <Progress value={68} className="mb-2" />
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-xs sm:text-sm text-gray-600 mb-3">
                 Next: Learn about API Integration and Database Design
               </p>
-              <Button size="sm" asChild>
+              <Button size="sm" asChild className="text-xs sm:text-sm">
                 <Link to="/tools/roadmap">Continue</Link>
               </Button>
             </div>
 
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium mb-2">Recommended for You</h4>
+            <div className="p-3 sm:p-4 border rounded-lg">
+              <h4 className="font-medium mb-2 text-sm sm:text-base">Recommended for You</h4>
               <div className="space-y-2">
-                <div className="text-sm">
+                <div className="text-xs sm:text-sm">
                   📚 Machine Learning Quiz - Test your ML knowledge
                 </div>
-                <div className="text-sm">
+                <div className="text-xs sm:text-sm">
                   🎨 Create visuals for Data Structures topic
                 </div>
-                <div className="text-sm">
+                <div className="text-xs sm:text-sm">
                   🗣️ Practice explaining algorithms with Voice Tutor
                 </div>
               </div>
