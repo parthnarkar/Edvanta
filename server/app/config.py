@@ -19,8 +19,9 @@ class Config:
     ENV = os.getenv("FLASK_ENV", "development")
 
     # External service credentials / settings (placeholders – do not hardcode real keys)
-    VERTEX_PROJECT_ID = os.getenv("VERTEX_PROJECT_ID")
-    VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "us-central1")
+    GOOGLE_PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
+    GOOGLE_LOCATION = os.getenv("GOOGLE_LOCATION")
+    GOOGLE_CREDENTIALS_JSON_BASE64 = os.getenv("GOOGLE_CREDENTIALS_JSON_BASE64")
 
     CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
     CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
