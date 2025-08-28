@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 from pymongo import MongoClient
 from bson import ObjectId
-from ..utils.ai_utils import create_quiz
+from ..utils.quizzes_utils import create_quiz
 from ..config import Config
 
 quizzes_bp = Blueprint("quizzes", __name__)

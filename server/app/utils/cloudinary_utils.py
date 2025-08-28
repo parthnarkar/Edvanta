@@ -1,20 +1,14 @@
-"""Cloudinary helper functions (placeholders).
+import requests
 
-Future implementations may include:
-- upload_file(file) -> returns {url, public_id}
-- delete_file(public_id)
-- transform_image(public_id, options)
-"""
+CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dnihe4ihi/video/upload"
+UPLOAD_PRESET = "podcast-visualizer"
 
-# from cloudinary import uploader  # Uncomment when cloudinary package installed
-
-
-def upload_file(file_obj):  # pragma: no cover - placeholder
-    """Upload file to Cloudinary.
-
-    Steps (future):
-      1. Validate file type / size
-      2. Call cloudinary.uploader.upload
-      3. Return relevant metadata (url, public_id)
-    """
-    raise NotImplementedError("Placeholder - implement Cloudinary upload logic")
+def upload_video_to_cloudinary(video_path):
+    with open(video_path, "rb") as video_file:
+        files = {"file": video_file}
+        data = {"upload_preset": UPLOAD_PRESET}
+        response = requests.post(CLOUDINARY_UPLOAD_URL, files=files, data=data)
+        if response.status_code == 200:
+            return response.json()["secure_url"]
+        else:
+            raise Exception(f"Cloudinary upload failed: {response.text}")
