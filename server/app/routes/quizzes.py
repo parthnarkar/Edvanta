@@ -1,3 +1,4 @@
+# QUIZ Backend 
 """Quiz generation & scoring endpoints.
 
 Responsible for generating quizzes from topic content and managing quiz data.
@@ -17,8 +18,8 @@ quizzes_bp = Blueprint("quizzes", __name__)
 try:
     mongo_uri = Config.MONGODB_URI
     db_name = Config.MONGODB_DB_NAME
-    mongo_collection_name_1 = Config.MONGODB_COLLECTION_NAME_1
-    mongo_collection_name_2 = Config.MONGODB_COLLECTION_NAME_2
+    mongo_collection_name_1 = Config.MONGODB_QUIZ_COLLECTION
+    mongo_collection_name_2 = Config.MONGODB_QUIZ_HISTORY_COLLECTION
 
     client = MongoClient(mongo_uri)
     db = client[db_name]
@@ -317,7 +318,7 @@ def quiz_history_endpoint():
             # Delete quiz history documents for the specific user
             result = quiz_history_collection.delete_many({"userId": user_email})
             
-            print(f"🗑️ Quiz history cleared for user {user_email} - {result.deleted_count} entries removed")
+            print(f"🗑 Quiz history cleared for user {user_email} - {result.deleted_count} entries removed")
             return jsonify({
                 "message": f"Quiz history cleared successfully for user {user_email}",
                 "deleted_count": result.deleted_count

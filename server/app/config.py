@@ -1,3 +1,5 @@
+# Config.py 
+
 """Configuration module for Edvanta backend.
 
 Environment variables (suggested):
@@ -9,7 +11,6 @@ Environment variables (suggested):
 - ELEVENLABS_API_KEY: ElevenLabs TTS
 - ALLOWED_ORIGINS: Comma separated origins for CORS (optional)
 """
-from __future__ import annotations
 import os
 from typing import List
 
@@ -19,9 +20,9 @@ class Config:
     ENV = os.getenv("FLASK_ENV", "development")
 
     # External service credentials / settings (placeholders – do not hardcode real keys)
-    GOOGLE_PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
-    GOOGLE_LOCATION = os.getenv("GOOGLE_LOCATION")
-    GOOGLE_CREDENTIALS_JSON_BASE64 = os.getenv("GOOGLE_CREDENTIALS_JSON_BASE64")
+    VERTEX_PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
+    VERTEX_LOCATION = os.getenv("GOOGLE_LOCATION")
+    VERTEX_DEFAULT_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS_JSON_BASE64")
 
     CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
     CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
@@ -33,7 +34,7 @@ class Config:
     ALLOWED_ORIGINS: List[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
 
     # MongoDB Credentials
-    MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://tanish-jain-225:tanishjain02022005@cluster0.578qvco.mongodb.net/")
-    MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "edvanta")
-    MONGODB_COLLECTION_NAME_1 = os.getenv("MONGODB_COLLECTION_NAME_1", "quizzes")
-    MONGODB_COLLECTION_NAME_2 = os.getenv("MONGODB_COLLECTION_NAME_2", "quiz_history")
+    MONGODB_URI = os.getenv("MONGODB_URI")
+    MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME")
+    MONGODB_QUIZ_COLLECTION = os.getenv("MONGODB_QUIZ_COLLECTION")
+    MONGODB_QUIZ_HISTORY_COLLECTION = os.getenv("MONGODB_QUIZ_HISTORY_COLLECTION")
