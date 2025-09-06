@@ -296,12 +296,63 @@ Please try again in a moment, and I'll be happy to provide a more detailed expla
     }
   }
 
+  const formatUserContent = (content) => {
+    // Simplified formatting for user messages with explicit white text
+    return `<p class="text-white">${content.replace(/\n/g, '<br>')}</p>`;
+  }
+
   const formatContent = (content) => {
-    // Simple markdown-like formatting
+    // Enhanced markdown formatting for AI responses
     return content
+      // Bold text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded">$1</code>')
-      .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto"><code>$2</code></pre>')
+      // Italic text
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      // Inline code
+      .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 rounded text-blue-600">$1</code>')
+      // Code blocks with language support
+      .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2"><code class="language-$1">$2</code></pre>')
+      // Headings
+      .replace(/^### (.*?)$/gm, '<h3 class="text-lg font-bold my-2 text-gray-800">$1</h3>')
+      .replace(/^## (.*?)$/gm, '<h2 class="text-xl font-bold my-3 text-gray-800">$1</h2>')
+      .replace(/^# (.*?)$/gm, '<h1 class="text-2xl font-bold my-3 text-gray-900">$1</h1>')
+      // Bullet points
+      .replace(/^- (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>')
+      .replace(/^• (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>')
+      .replace(/^• (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>')
+      // Numbered lists
+      .replace(/^(\d+)\. (.*?)$/gm, '<li class="ml-4 list-decimal">$2</li>')
+      // Blockquotes
+      .replace(/^> (.*?)$/gm, '<blockquote class="border-l-4 border-gray-300 pl-3 italic text-gray-700 my-2">$1</blockquote>')
+      // Links
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-blue-600 underline hover:text-blue-800">$1</a>')
+      // Horizontal rule
+      .replace(/^---$/gm, '<hr class="my-3 border-t border-gray-300">')
+      // Tables (simple support)
+      .replace(/\n\n\|(.+)\|\n\|(?:[-:]+\|)+\n((.*\n)+?)\n/g, function(match, headers, rows) {
+        const headerCells = headers.split('|').map(header => header.trim()).filter(Boolean);
+        const headerRow = '<tr>' + headerCells.map(cell => `<th class="border p-2 bg-gray-100">${cell}</th>`).join('') + '</tr>';
+        
+        const tableRows = rows.trim().split('\n').map(row => {
+          const cells = row.split('|').map(cell => cell.trim()).filter(Boolean);
+          return '<tr>' + cells.map(cell => `<td class="border p-2">${cell}</td>`).join('') + '</tr>';
+        }).join('');
+        
+        return `<div class="overflow-x-auto my-3"><table class="min-w-full border-collapse border border-gray-300"><thead>${headerRow}</thead><tbody>${tableRows}</tbody></table></div>`;
+      })
+      // Ensure paragraphs have proper spacing
+      .replace(/\n\n/g, '</p><p class="my-2">')
+      // Convert list items to proper lists
+      .replace(/(<li[^>]*>.*?<\/li>)\s*(<li[^>]*>.*?<\/li>)/gs, function(match) {
+        return '<ul class="my-2">' + match + '</ul>';
+      })
+      // Fix any unmatched paragraph tags
+      .replace(/<\/p>(\s*)<p/g, '</p>$1<p')
+      // Wrap content in paragraph if not already wrapped
+      .replace(/^(.+)(?!\<\/p\>)$/gm, function(match) {
+        if (!match.includes('<')) return `<p>${match}</p>`;
+        return match;
+      })
   }
 
   const formatExactTimestamp = (timestamp) => {
@@ -429,65 +480,91 @@ Please try again in a moment, and I'll be happy to provide a more detailed expla
             </div>
           )}
 
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex gap-2 sm:gap-3 ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              {message.role === 'assistant' && (
-                <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-white rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gray-200 overflow-hidden">
-                  <img 
-                    src="/edvanta-logo.png" 
-                    alt="Edvanta AI" 
-                    className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 object-contain"
-                  />
-                </div>
-              )}
-              
+          {messages.map((message, index) => {
+            // Define consistent sizes for avatar
+            const avatarSizeClasses = "w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8";
+            const avatarContentClasses = "w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6";
+            
+            // Determine if message is from user or AI
+            const isUserMessage = message.role === 'user';
+            
+            // Message bubble styles based on sender
+            const messageBubbleClasses = `max-w-[90%] sm:max-w-[85%] lg:max-w-3xl p-2.5 sm:p-3 lg:p-4 rounded-lg ${
+              isUserMessage 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white border shadow-sm'
+            }`;
+            
+            // Content styles based on sender
+            const contentClasses = `prose prose-sm max-w-none text-xs sm:text-sm lg:text-base leading-relaxed ${
+              isUserMessage 
+                ? '!text-white' 
+                : 'prose-headings:text-gray-800 prose-p:text-gray-700 prose-li:text-gray-700 prose-code:text-blue-600'
+            }`;
+            
+            return (
               <div
-                className={`max-w-[90%] sm:max-w-[85%] lg:max-w-3xl p-2.5 sm:p-3 lg:p-4 rounded-lg ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white border shadow-sm'
-                }`}
+                key={index}
+                className={`flex gap-2 sm:gap-3 ${isUserMessage ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className="prose prose-sm max-w-none text-xs sm:text-sm lg:text-base leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: formatContent(message.content)
-                  }}
-                />
-                
-                {message.timestamp && (
-                  <div className="text-xs text-gray-400 mt-1.5 sm:mt-2">
-                    <div className="font-medium">
-                      {formatExactTimestamp(message.timestamp)}
-                    </div>
+                {/* AI Avatar - Only show for AI messages */}
+                {!isUserMessage && (
+                  <div className={`${avatarSizeClasses} bg-white rounded-full flex items-center justify-center flex-shrink-0 border-2 border-gray-200 overflow-hidden`}>
+                    <img 
+                      src="/edvanta-logo.png" 
+                      alt="Edvanta AI" 
+                      className={`${avatarContentClasses} object-contain`}
+                    />
                   </div>
                 )}
-              </div>
-              
-              {message.role === 'user' && (
-                <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-blue-200">
-                  {user?.photoURL ? (
-                    <img 
-                      src={user.photoURL} 
-                      alt={user.displayName || 'User'} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                      <span className="text-white text-xs sm:text-sm font-medium">
-                        {(user?.displayName || user?.email)?.charAt(0)?.toUpperCase() || 'U'}
-                      </span>
+                
+                {/* Message Bubble */}
+                <div className={messageBubbleClasses}>
+                  {/* Message Content */}
+                  <div
+                    className={contentClasses}
+                    dangerouslySetInnerHTML={{
+                      __html: isUserMessage 
+                        ? formatUserContent(message.content) 
+                        : formatContent(message.content)
+                    }}
+                  />
+                  
+                  {/* Timestamp */}
+                  {message.timestamp && (
+                    <div className={`text-xs ${isUserMessage ? 'text-blue-100' : 'text-gray-400'} mt-1.5 sm:mt-2`}>
+                      <div className="font-medium">
+                        {formatExactTimestamp(message.timestamp)}
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
-            </div>  
-          ))}
+                
+                {/* User Avatar - Only show for user messages */}
+                {isUserMessage && (
+                  <div className={`${avatarSizeClasses} rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-blue-200`}>
+                    {user?.photoURL ? (
+                      <img 
+                        src={user.photoURL} 
+                        alt={user.displayName || 'User'} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.displayName || user.email?.split('@')[0] || 'User') + "&background=2563eb&color=ffffff";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                        <span className="text-white text-xs sm:text-sm font-medium">
+                          {(user?.displayName || user?.email)?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
           
           {isTyping && (
             <div className="flex gap-2 sm:gap-3">

@@ -50,6 +50,7 @@ export default {
     },
   },
   plugins: [
+    require('@tailwindcss/typography'),
     function({ addUtilities }) {
       addUtilities({
         '.line-clamp-2': {

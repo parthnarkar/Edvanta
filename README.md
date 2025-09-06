@@ -12,7 +12,7 @@ Edvanta combines generative AI + assistive tooling to help learners:
 - Convert dense study material into concise visual storyboards
 - Ask contextual doubts via an intelligent chatbot
 - Auto‑generate and evaluate quizzes for active recall
-- Interact with an AI tutor (text + future voice via ElevenLabs)
+- Interact with an AI tutor (text + future voice)
 - Build tailored learning roadmaps toward a goal role/skill
 - Improve resumes against job descriptions with actionable feedback
 
@@ -20,7 +20,7 @@ The repository is a monorepo containing a React (Vite + Tailwind) client and a m
 
 ## High‑Level Architecture
 
-Client (React) <-> REST API (Flask) <-> External Services (Vertex AI, Cloudinary, ElevenLabs, Future Vector Store)
+Client (React) <-> REST API (Flask) <-> External Services (Vertex AI, Cloudinary, Future Vector Store)
 
 ## Features (Current Skeleton)
 
@@ -89,7 +89,6 @@ Defined in `server/.env.example`:
 | CLOUDINARY_CLOUD_NAME | Cloudinary cloud name |
 | CLOUDINARY_API_KEY | Cloudinary API key |
 | CLOUDINARY_API_SECRET | Cloudinary secret |
-| ELEVENLABS_API_KEY | ElevenLabs TTS key |
 | ALLOWED_ORIGINS | Comma separated CORS origins ("\*" for all in dev) |
 
 ## Frontend (React) Setup
@@ -143,7 +142,6 @@ All endpoints currently return JSON with a basic placeholder `message`. Logic wi
 | --------------------------- | ----------------------------------------------------- |
 | Vertex AI (Gemini / Imagen) | Summaries, quizzes, tutor responses, image generation |
 | Cloudinary                  | Media & resume storage                                |
-| ElevenLabs                  | Text-to-speech for tutor                              |
 | Vector Store (future)       | Context retrieval for chatbot                         |
 | Auth Provider (Firebase)    | User auth on frontend                                 |
 

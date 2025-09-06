@@ -23,8 +23,8 @@ def create_quiz(topic: str, difficulty: str = "medium", num_questions: int = 10)
         print("🤖 Attempting AI generation...")
 
         # Set up credentials
-        project_id = Config.VERTEX_PROJECT_ID
-        location = Config.VERTEX_LOCATION
+        project_id = Config.GOOGLE_CLOUD_PROJECT
+        location = Config.GOOGLE_CLOUD_LOCATION
         credentials_base64 = Config.VERTEX_DEFAULT_CREDENTIALS
 
         # Convert base64 to credentials
@@ -34,8 +34,8 @@ def create_quiz(topic: str, difficulty: str = "medium", num_questions: int = 10)
 
         vertexai.init(project=project_id, location=location, credentials=credentials)
 
-        # model = GenerativeModel("gemini-1.5-flash") # Not Working 
-        model = GenerativeModel("gemini-2.5-flash")
+        model_name = Config.VERTEX_MODEL_NAME
+        model = GenerativeModel(model_name=model_name)
 
         prompt = f"""Generate a quiz about "{topic}" with {num_questions} multiple choice questions.
 Difficulty: {difficulty}

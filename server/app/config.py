@@ -8,7 +8,6 @@ Environment variables (suggested):
 - VERTEX_PROJECT_ID: GCP project for Vertex AI
 - VERTEX_LOCATION: GCP region
 - CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET: Cloudinary credentials
-- ELEVENLABS_API_KEY: ElevenLabs TTS
 - ALLOWED_ORIGINS: Comma separated origins for CORS (optional)
 """
 import os
@@ -20,15 +19,20 @@ class Config:
     ENV = os.getenv("FLASK_ENV", "development")
 
     # External service credentials / settings (placeholders – do not hardcode real keys)
-    VERTEX_PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
-    VERTEX_LOCATION = os.getenv("GOOGLE_LOCATION")
+    GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_PROJECT_ID")
+    GOOGLE_CLOUD_LOCATION = os.getenv("GOOGLE_LOCATION")
     VERTEX_DEFAULT_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS_JSON_BASE64")
+    VERTEX_MODEL_NAME = os.getenv("VERTEX_MODEL_NAME")
+    
+    # Service-specific settings
+    VERTEX_TEMPERATURE = float(os.getenv("VERTEX_TEMPERATURE", "0.7"))
+    VERTEX_TOP_P = float(os.getenv("VERTEX_TOP_P", "0.95"))
+    VERTEX_TOP_K = int(os.getenv("VERTEX_TOP_K", "40"))
+    VERTEX_MAX_OUTPUT_TOKENS = int(os.getenv("VERTEX_MAX_OUTPUT_TOKENS", "1024"))
 
     CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
     CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
     CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
-
-    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
     # CORS
     ALLOWED_ORIGINS: List[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]

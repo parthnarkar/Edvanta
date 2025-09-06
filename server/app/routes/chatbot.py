@@ -60,8 +60,8 @@ def get_ai_response(question: str, context: str = "", chat_history: list = None)
     """Generate AI response for doubt solving with conversation context."""
     try:
         # Set up credentials
-        project_id = Config.VERTEX_PROJECT_ID or "massive-graph-465922-i8"
-        location = Config.VERTEX_LOCATION or "us-central1"
+        project_id = Config.GOOGLE_CLOUD_PROJECT
+        location = Config.GOOGLE_CLOUD_LOCATION
         credentials_base64 = Config.VERTEX_DEFAULT_CREDENTIALS
         
         # Convert base64 to credentials
@@ -70,7 +70,8 @@ def get_ai_response(question: str, context: str = "", chat_history: list = None)
         )
 
         vertexai.init(project=project_id, location=location, credentials=credentials)
-        model = GenerativeModel("gemini-2.5-flash")
+        model_name = Config.VERTEX_MODEL_NAME
+        model = GenerativeModel(model_name=model_name)
 
         # Build comprehensive prompt with conversation context
         base_context = ""
