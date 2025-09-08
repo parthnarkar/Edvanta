@@ -2,6 +2,7 @@
 
 from flask import Flask
 from flask_cors import CORS
+import os
 
 # Load environment variables from a .env file if present (local dev convenience)
 try:  # pragma: no cover - optional dependency handling
@@ -25,8 +26,8 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Enable CORS (allow all origins for now – tighten later if needed)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Enable CORS to allow all origins
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
     # Import blueprints (local imports to avoid circular dependencies)
     from .routes.visual import visual_bp
