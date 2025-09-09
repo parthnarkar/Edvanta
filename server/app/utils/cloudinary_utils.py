@@ -2,19 +2,17 @@ import requests
 import cloudinary
 import cloudinary.uploader
 import os
-from dotenv import load_dotenv
 import tempfile
+from app.config import Config
 
 
-load_dotenv()
-
-CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dnihe4ihi/video/upload"
+CLOUDINARY_UPLOAD_URL = f"https://api.cloudinary.com/v1_1/{Config.CLOUDINARY_CLOUD_NAME}/video/upload"
 UPLOAD_PRESET = "podcast-visualizer"
 
 cloudinary.config(
-  cloud_name = os.getenv('CLOUD_NAME'),
-  api_key = os.getenv('CLOUDINARY_APIKEY'),
-  api_secret = os.getenv('CLOUDINARY_SECRET')
+  cloud_name = Config.CLOUDINARY_CLOUD_NAME,
+  api_key = Config.CLOUDINARY_API_KEY,
+  api_secret = Config.CLOUDINARY_API_SECRET
 )
 
 
@@ -58,9 +56,9 @@ def fetch_file_from_cloudinary(public_id, resource_type="raw", file_format="pdf"
   Fetch a private file from Cloudinary using the Admin API.
   Returns the file content (bytes).
   """
-  cloud_name = os.getenv("CLOUD_NAME")
-  api_key = os.getenv("CLOUDINARY_APIKEY")
-  api_secret = os.getenv("CLOUDINARY_SECRET")
+  cloud_name = Config.CLOUDINARY_CLOUD_NAME
+  api_key = Config.CLOUDINARY_API_KEY
+  api_secret = Config.CLOUDINARY_API_SECRET
   download_url = f"https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{public_id}.{file_format}"
 
   response = requests.get(

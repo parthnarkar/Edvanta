@@ -10,7 +10,7 @@ This follows the pipeline demonstrated in demo.py:
 Environment requirements (see .env.example):
 - GOOGLE_CREDENTIALS_JSON_BASE64: base64-encoded GCP service account JSON
 - GOOGLE_PROJECT_ID: GCP project for Vertex AI text model
-- LOCATION: Vertex region (e.g., us-central1)
+- GOOGLE_LOCATION: Vertex region (e.g., us-central1)
 - Optional override for image generation project:
   - GCP_IMAGE_PROJECT_ID (defaults to GOOGLE_PROJECT_ID)
 """
@@ -44,6 +44,7 @@ from moviepy import (
 
 from google import genai
 from google.genai import types as genai_types
+from app.config import Config
 
 
 # Canvas size (16:9)
@@ -86,7 +87,7 @@ _GENAI_IMAGE_CLIENT = None
 
 def _ensure_google_credentials() -> None:
     """Materialize GOOGLE_APPLICATION_CREDENTIALS from base64 env, if provided."""
-    credentials_base64 = os.environ.get("GOOGLE_CREDENTIALS_JSON_BASE64")
+    credentials_base64 = Config.VERTEX_DEFAULT_CREDENTIALS
     if not credentials_base64:
         return
     key_file_path = os.path.join(tempfile.gettempdir(), "gcloud_key.json")
@@ -100,11 +101,11 @@ def _ensure_google_credentials() -> None:
 
 def _get_project_and_location(for_images: bool = False) -> tuple[str, str]:
     """Resolve project and location from environment with sensible fallbacks."""
-    # Prefer GOOGLE_* if set (to align with current file usage), then GCP_*, then GOOGLE_CLOUD_*
-    project = os.environ.get("GOOGLE_PROJECT_ID")
-    location = os.environ.get("GOOGLE_LOCATION")
+    # Use Config values
+    project = Config.GOOGLE_CLOUD_PROJECT
+    location = Config.GOOGLE_CLOUD_LOCATION
     if not project:
-        raise RuntimeError("Project ID not set in env (GOOGLE_PROJECT_ID/GCP_PROJECT_ID/GOOGLE_CLOUD_PROJECT)")
+        raise RuntimeError("Project ID not set in Config.GOOGLE_CLOUD_PROJECT")
     return project, location
 
 
@@ -129,7 +130,7 @@ def _get_genai_image_client() -> genai.Client:
 def generate_content_with_vertex_ai(prompt: str) -> str:
     """Generate content using Gemini via google-genai (returns plain text)."""
     client = _get_genai_text_client()
-    model_id = os.environ.get("GENAI_TEXT_MODEL", "gemini-2.5-flash")
+    model_id = Config.GENAI_TEXT_MODEL
     chat = client.chats.create(
         model=model_id,
         config=genai_types.GenerateContentConfig(),
@@ -209,7 +210,7 @@ def generate_images_with_vertex_ai(prompts: List[str]) -> List[str]:
     Note: aspect_ratio set to 16:9 to match output video.
     """
     client = _get_genai_image_client()
-    model_id = os.environ.get("GENAI_IMAGE_MODEL", "imagen-4.0-generate-preview-06-06")
+    model_id = Config.GENAI_IMAGE_MODEL
 
     generated_images: List[str] = []
     for i, prompt in enumerate(prompts):

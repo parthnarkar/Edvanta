@@ -27,3 +27,27 @@ export function truncateText(text, maxLength = 100) {
   if (text.length <= maxLength) return text
   return text.substr(0, maxLength) + '...'
 }
+
+// Default avatar image path
+const DEFAULT_AVATAR = '/default-avatar.svg'
+
+/**
+ * Gets user profile image URL with fallback
+ * @param {Object} user - Firebase auth user object
+ * @param {Object} userProfile - Additional user profile data
+ * @returns {string} - URL to profile image
+ */
+export function getUserProfileImage(user, userProfile) {
+  // Check sources in order of preference, only two options as per requirements
+  const profileImage = userProfile?.profileImageUrl || user?.photoURL || DEFAULT_AVATAR;
+  
+  // For debugging
+  console.log("Profile image selection:", {
+    userProfileImage: userProfile?.profileImageUrl,
+    userPhotoURL: user?.photoURL,
+    fallbackImage: DEFAULT_AVATAR,
+    selectedImage: profileImage
+  });
+  
+  return profileImage;
+}

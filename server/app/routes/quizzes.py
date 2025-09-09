@@ -26,9 +26,7 @@ try:
     quizzes_collection = db[mongo_collection_name_1]
     quiz_history_collection = db[mongo_collection_name_2]
 
-    print("✅ Connected to MongoDB")
 except Exception as e:
-    print(f"❌ MongoDB connection failed: {e}")
     # Fallback to in-memory storage if MongoDB is not available
     quizzes_storage = []
     quiz_history = []
@@ -113,8 +111,6 @@ def manage_quizzes():
             return jsonify(formatted_quizzes)
             
         except Exception as e:
-            # Fallback to empty list if MongoDB fails
-            print(f"MongoDB GET error: {e}")
             return jsonify([])
     
     elif request.method == "POST":
@@ -262,7 +258,6 @@ def quiz_history_endpoint():
             return jsonify(history_list)
             
         except Exception as e:
-            print(f"MongoDB GET history error: {e}")
             return jsonify([])
     
     elif request.method == "POST":
@@ -296,7 +291,6 @@ def quiz_history_endpoint():
             # Insert into MongoDB
             result = quiz_history_collection.insert_one(history_entry)
 
-            print("✅ Quiz history logged:", history_entry)
             return jsonify({
                 "message": "Quiz history logged successfully", 
                 "id": history_entry["id"],
@@ -318,7 +312,6 @@ def quiz_history_endpoint():
             # Delete quiz history documents for the specific user
             result = quiz_history_collection.delete_many({"userId": user_email})
             
-            print(f"🗑 Quiz history cleared for user {user_email} - {result.deleted_count} entries removed")
             return jsonify({
                 "message": f"Quiz history cleared successfully for user {user_email}",
                 "deleted_count": result.deleted_count

@@ -41,7 +41,8 @@ export function Quizzes() {
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Set isLoading to true by default to show loading immediately on page load
+  const [isLoading, setIsLoading] = useState(true);
   const [showQuizModal, setShowQuizModal] = useState(false);
 
   // Create quiz form state
@@ -52,6 +53,7 @@ export function Quizzes() {
 
   // Quiz history state
   const [quizHistory, setQuizHistory] = useState([]);
+  // History tab will only set isLoadingHistory to true when that tab is selected
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   // Get user data from Firebase authentication
@@ -71,6 +73,9 @@ export function Quizzes() {
 
   // Load quizzes when component mounts or user changes
   useEffect(() => {
+    // Set loading state to true immediately when component mounts
+    setIsLoading(true);
+
     if (!authLoading) {
       loadQuizzes();
     }
@@ -78,17 +83,27 @@ export function Quizzes() {
 
   // Load history when history tab is active or user changes
   useEffect(() => {
-    if (activeTab === "history" && !authLoading) {
-      loadQuizHistory();
+    if (activeTab === "history") {
+      // Set loading state to true immediately when switching to history tab
+      setIsLoadingHistory(true);
+
+      if (!authLoading) {
+        loadQuizHistory();
+      }
     }
   }, [activeTab, user?.email, authLoading]);
 
   const loadQuizzes = async () => {
     try {
-      setIsLoading(true);
+      // Start time is recorded at the beginning to ensure full minimum loading time
+      const startTime = Date.now();
+
       // Only fetch quizzes if user is authenticated
       if (!user?.email) {
         setQuizzes([]);
+        // Still enforce minimum loading time even if no user
+        await enforceMinimumLoadingTime(startTime);
+        setIsLoading(false);
         return;
       }
 
@@ -101,6 +116,9 @@ export function Quizzes() {
         const data = await response.json();
         setQuizzes(data);
       }
+
+      // Ensure minimum loading time of 1 second
+      await enforceMinimumLoadingTime(startTime);
     } catch (error) {
       console.error("Failed to load quizzes:", error);
     } finally {
@@ -108,12 +126,30 @@ export function Quizzes() {
     }
   };
 
+  // This helper ensures a minimum loading time for better UX
+  const enforceMinimumLoadingTime = async (startTime, minimumTime = 1000) => {
+    const elapsedTime = Date.now() - startTime;
+    const remainingTime = Math.max(0, minimumTime - elapsedTime);
+
+    if (remainingTime > 0) {
+      // Create a promise that resolves after the remaining time
+      return new Promise((resolve) => setTimeout(resolve, remainingTime));
+    }
+
+    return Promise.resolve(); // No need to wait if minimum time already passed
+  };
+
   const loadQuizHistory = async () => {
     try {
-      setIsLoadingHistory(true);
+      // Start time is recorded at the beginning to ensure full minimum loading time
+      const startTime = Date.now();
+
       // Only fetch quiz history if user is authenticated
       if (!user?.email) {
         setQuizHistory([]);
+        // Still enforce minimum loading time even if no user
+        await enforceMinimumLoadingTime(startTime);
+        setIsLoadingHistory(false);
         return;
       }
 
@@ -126,6 +162,9 @@ export function Quizzes() {
         const data = await response.json();
         setQuizHistory(data);
       }
+
+      // Ensure minimum loading time of 1 second
+      await enforceMinimumLoadingTime(startTime);
     } catch (error) {
       console.error("Failed to load quiz history:", error);
     } finally {
@@ -162,7 +201,6 @@ export function Quizzes() {
       if (response.ok) {
         // Clear local state
         setQuizHistory([]);
-        console.log("✅ Quiz history cleared successfully");
       } else {
         throw new Error("Failed to clear quiz history");
       }
@@ -183,6 +221,8 @@ export function Quizzes() {
 
     try {
       setIsGenerating(true);
+      // Record start time to enforce minimum loading time
+      const startTime = Date.now();
 
       // Generate quiz
       const generateResponse = await fetch(
@@ -219,6 +259,9 @@ export function Quizzes() {
       });
 
       if (saveResponse.ok) {
+        // Ensure minimum loading time of 1 second
+        await enforceMinimumLoadingTime(startTime);
+
         // Reload quizzes
         await loadQuizzes();
         // Reset form
@@ -318,8 +361,6 @@ export function Quizzes() {
     };
 
     try {
-      console.log("🎉 Quiz Completed!", completionData);
-
       // Post to quiz-history endpoint
       const response = await fetch(`${backEndURL}/api/quiz-history`, {
         method: "POST",
@@ -330,7 +371,6 @@ export function Quizzes() {
       });
 
       if (response.ok) {
-        console.log("✅ Quiz completion logged to history successfully");
         // Reload history if on history tab
         if (activeTab === "history") {
           await loadQuizHistory();
@@ -557,10 +597,17 @@ export function Quizzes() {
   // Don't render until auth state is determined
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <div className="relative inline-block">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+          </div>
+          <p className="text-gray-700 font-medium mt-4 mb-2">
+            Verifying your account...
+          </p>
+          <p className="text-xs text-gray-500">
+            Preparing your personalized quiz experience
+          </p>
         </div>
       </div>
     );
@@ -598,11 +645,16 @@ export function Quizzes() {
 
         <TabsContent value="browse" className="space-y-4 sm:space-y-6">
           {isLoading ? (
-            <div className="flex items-center justify-center py-8 sm:py-12">
-              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin" />
-              <span className="ml-2 text-sm sm:text-base">
-                Loading quizzes...
+            <div className="flex flex-col items-center justify-center py-10 sm:py-16">
+              <div className="relative">
+                <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary" />
+              </div>
+              <span className="text-sm sm:text-base text-gray-700 font-medium mt-4">
+                Loading your quizzes...
               </span>
+              <p className="text-xs text-gray-500 mt-2">
+                Please wait while we prepare your learning content
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
@@ -821,9 +873,11 @@ export function Quizzes() {
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
-                    <span className="hidden sm:inline">Generating Quiz...</span>
-                    <span className="sm:hidden">Generating...</span>
+                    <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" />
+                    <span className="hidden sm:inline">
+                      Creating your quiz...
+                    </span>
+                    <span className="sm:hidden">Creating...</span>
                   </>
                 ) : !user ? (
                   <>
@@ -873,11 +927,16 @@ export function Quizzes() {
             </CardHeader>
             <CardContent>
               {isLoadingHistory ? (
-                <div className="flex items-center justify-center py-8 sm:py-12">
-                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin" />
-                  <span className="ml-2 text-sm sm:text-base">
-                    Loading history...
+                <div className="flex flex-col items-center justify-center py-10 sm:py-16">
+                  <div className="relative">
+                    <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary" />
+                  </div>
+                  <span className="text-sm sm:text-base text-gray-700 font-medium mt-4">
+                    Loading your quiz history...
                   </span>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Please wait while we retrieve your progress data
+                  </p>
                 </div>
               ) : quizHistory.length > 0 ? (
                 <div className="space-y-3 sm:space-y-4">

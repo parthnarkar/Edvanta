@@ -4,22 +4,22 @@ import base64
 import vertexai
 from vertexai.generative_models import GenerativeModel
 from vertexai.preview.vision_models import ImageGenerationModel
+from google.oauth2 import service_account
+from app import Config
 
 def setup_vertex_ai():
     """Set up Vertex AI credentials and return initialized model"""
     # Set up Vertex AI credentials
-    credentials_base64 = os.environ.get("GOOGLE_CREDENTIALS_JSON_BASE64")
+    credentials_base64 = Config.VERTEX_DEFAULT_CREDENTIALS
     if not credentials_base64:
         raise RuntimeError("GOOGLE_CREDENTIALS_JSON_BASE64 not found in environment variables")
-    
-    key_file_path = os.path.join(tempfile.gettempdir(), "key.json")
-    with open(key_file_path, "w") as f:
-        f.write(base64.b64decode(credentials_base64).decode("utf-8"))
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_file_path
-    
-    project_id = os.environ.get("GCP_PROJECT_ID")
-    location = os.environ.get("LOCATION")
-    vertexai.init(project=project_id, location=location)
+
+    project_id = Config.GOOGLE_CLOUD_PROJECT
+    location = Config.GOOGLE_CLOUD_LOCATION
+    credentials = service_account.Credentials.from_service_account_info(
+        json.loads(base64.b64decode(credentials_base64))
+    )
+    vertexai.init(project=project_id, location=location, credentials=credentials)
     
     return GenerativeModel("gemini-2.5-flash")
 
@@ -32,7 +32,9 @@ def generate_content_with_vertex_ai(prompt):
 def generate_images_with_vertex_ai(prompts):
     """Generate images using Vertex AI Imagen model"""
     # Setup Vertex AI with specific project for image generation
-    vertexai.init(project="massive-graph-465922-i8", location="us-central1")
+    project_id = "massive-graph-465922-i8"
+    location = "us-central1"
+    vertexai.init(project=project_id, location=location)
     generation_model = ImageGenerationModel.from_pretrained("imagen-4.0-generate-preview-06-06")
     
     generated_images = []
@@ -69,8 +71,7 @@ from moviepy import (
     CompositeVideoClip,
     concatenate_videoclips
 )
-from utils.vertex_ai_helper import generate_content_with_vertex_ai, generate_images_with_vertex_ai
-
+from app.utils.visual_utils import generate_content_with_vertex_ai, generate_images_with_vertex_ai
 WIDTH, HEIGHT = 432, 768
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONT_SIZE = 28

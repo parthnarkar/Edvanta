@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -26,9 +26,26 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
+    // Use a simpler version of the main loader for route transitions
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
+        <div className="text-center loader-appear">
+          <div className="mb-4">
+            <img 
+              src="/edvanta-logo.png" 
+              alt="Edvanta Logo" 
+              className="h-20 w-auto mx-auto logo-pulse"
+            />
+          </div>
+          
+          <p className="mt-4 text-gray-600 font-medium">Verifying access...</p>
+          
+          <div className="mt-3 flex justify-center space-x-2">
+            <span className="h-1.5 w-1.5 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "0ms" }}></span>
+            <span className="h-1.5 w-1.5 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></span>
+            <span className="h-1.5 w-1.5 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "600ms" }}></span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -63,11 +80,47 @@ function PublicLayout({ children }) {
 
 function App() {
   const { loading } = useAuth();
+  const [showLoading, setShowLoading] = useState(true);
+  const startTimeRef = useRef(Date.now());
+  
+  // Ensure loading state shows for at least 1.5 seconds
+  useEffect(() => {
+    if (!loading) {
+      const elapsedTime = Date.now() - startTimeRef.current;
+      const minimumLoadingTime = 1500; // 1.5 seconds minimum loading time
+      const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime); 
+      
+      console.log(`App loading time: ${elapsedTime}ms, waiting additional: ${remainingTime}ms`);
+      
+      const timer = setTimeout(() => {
+        setShowLoading(false);
+      }, remainingTime);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
-  if (loading) {
+  if (loading || showLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
+        <div className="text-center loader-appear">
+          <div className="mb-6">
+            <img 
+              src="/edvanta-logo.png" 
+              alt="Edvanta Logo" 
+              className="h-24 w-auto mx-auto logo-pulse"
+            />
+          </div>
+          
+          <p className="mt-6 text-gray-600 font-medium">Loading your experience...</p>
+          <p className="mt-1 text-xs text-gray-500">Preparing personalized learning tools</p>
+          
+          <div className="mt-6 flex justify-center space-x-2">
+            <span className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "0ms" }}></span>
+            <span className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></span>
+            <span className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "600ms" }}></span>
+          </div>
+        </div>
       </div>
     );
   }

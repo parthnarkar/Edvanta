@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { signOut } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 import { BookOpen, User, LogOut, Menu, Bell, X } from "lucide-react";
+import { getUserProfileImage } from "../../lib/utils";
 
 export function Navbar() {
   const { user, userProfile } = useAuth();
@@ -85,17 +86,15 @@ export function Navbar() {
                 <div className="flex items-center space-x-3">
                   <Bell className="h-5 w-5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors duration-300" />
                   <div className="flex items-center space-x-2">
-                    {userProfile?.photoURL || user?.photoURL ? (
-                      <img
-                        src={userProfile?.photoURL || user?.photoURL}
-                        alt="Profile"
-                        className="w-8 h-8 rounded-full object-cover border border-blue-500"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                        <User className="h-4 w-4 text-white" />
-                      </div>
-                    )}
+                    <img
+                      src={getUserProfileImage(user, userProfile)}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full object-cover border border-blue-500"
+                      onError={(e) => {
+                        console.error("Error loading profile image:", e.target.src);
+                        e.target.src = '/default-avatar.svg';
+                      }}
+                    />
                     <span className="text-sm font-medium text-gray-900 hidden lg:inline">
                       {userProfile?.name || user.displayName || "User"}
                     </span>
@@ -149,17 +148,15 @@ export function Navbar() {
             {user && (
               <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
                 <div className="flex items-center space-x-3">
-                  {userProfile?.photoURL || user?.photoURL ? (
-                    <img
-                      src={userProfile?.photoURL || user?.photoURL}
-                      alt="Profile"
-                      className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                      <User className="h-6 w-6 text-white" />
-                    </div>
-                  )}
+                  <img
+                    src={getUserProfileImage(user, userProfile)}
+                    alt="Profile"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
+                    onError={(e) => {
+                      console.error("Error loading profile image:", e.target.src);
+                      e.target.src = '/default-avatar.svg';
+                    }}
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {userProfile?.name || user.displayName || "User"}
