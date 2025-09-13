@@ -282,11 +282,11 @@ export function DoubtSolving() {
           prev.map((session) =>
             session.id === sessionId
               ? {
-                  ...session,
-                  messages: finalMessages,
-                  messageCount: finalMessages.length,
-                  lastActivity: serverTimestamp,
-                }
+                ...session,
+                messages: finalMessages,
+                messageCount: finalMessages.length,
+                lastActivity: serverTimestamp,
+              }
               : session
           )
         );
@@ -327,109 +327,129 @@ Please try again in a moment, and I'll be happy to provide a more detailed expla
   };
 
   const formatContent = (content) => {
-    // Enhanced markdown formatting for AI responses
-    return (
-      content
-        // Bold text
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        // Italic text
-        .replace(/\*(.*?)\*/g, "<em>$1</em>")
-        // Inline code
-        .replace(
-          /`([^`]+)`/g,
-          '<code class="bg-gray-100 px-1 rounded text-blue-600">$1</code>'
-        )
-        // Code blocks with language support
-        .replace(
-          /```(\w+)?\n([\s\S]*?)```/g,
-          '<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2"><code class="language-$1">$2</code></pre>'
-        )
-        // Headings
-        .replace(
-          /^### (.*?)$/gm,
-          '<h3 class="text-lg font-bold my-2 text-gray-800">$1</h3>'
-        )
-        .replace(
-          /^## (.*?)$/gm,
-          '<h2 class="text-xl font-bold my-3 text-gray-800">$1</h2>'
-        )
-        .replace(
-          /^# (.*?)$/gm,
-          '<h1 class="text-2xl font-bold my-3 text-gray-900">$1</h1>'
-        )
-        // Bullet points
-        .replace(/^- (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>')
-        .replace(/^• (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>')
-        .replace(/^• (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>')
-        // Numbered lists
-        .replace(/^(\d+)\. (.*?)$/gm, '<li class="ml-4 list-decimal">$2</li>')
-        // Blockquotes
-        .replace(
-          /^> (.*?)$/gm,
-          '<blockquote class="border-l-4 border-gray-300 pl-3 italic text-gray-700 my-2">$1</blockquote>'
-        )
-        // Links
-        .replace(
-          /\[([^\]]+)\]\(([^)]+)\)/g,
-          '<a href="$2" target="_blank" class="text-blue-600 underline hover:text-blue-800">$1</a>'
-        )
-        // Horizontal rule
-        .replace(/^---$/gm, '<hr class="my-3 border-t border-gray-300">')
-        // Tables (simple support)
-        .replace(
-          /\n\n\|(.+)\|\n\|(?:[-:]+\|)+\n((.*\n)+?)\n/g,
-          function (match, headers, rows) {
-            const headerCells = headers
-              .split("|")
-              .map((header) => header.trim())
-              .filter(Boolean);
-            const headerRow =
-              "<tr>" +
-              headerCells
-                .map(
-                  (cell) => `<th class="border p-2 bg-gray-100">${cell}</th>`
-                )
-                .join("") +
-              "</tr>";
+    // Enhanced markdown formatting for AI responses, with improved code block handling
+    // 1. Handle code blocks first to avoid interfering with inline code/markdown
+    let formatted = content;
 
-            const tableRows = rows
-              .trim()
-              .split("\n")
-              .map((row) => {
-                const cells = row
-                  .split("|")
-                  .map((cell) => cell.trim())
-                  .filter(Boolean);
-                return (
-                  "<tr>" +
-                  cells
-                    .map((cell) => `<td class="border p-2">${cell}</td>`)
-                    .join("") +
-                  "</tr>"
-                );
-              })
-              .join("");
+    // Store code blocks temporarily to avoid double-formatting
+    const codeBlocks = [];
+    formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push({
+        lang: lang || "",
+        code: code.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+        raw: code,
+      });
+      return `[[CODEBLOCK_${idx}]]`;
+    });
 
-            return `<div class="overflow-x-auto my-3"><table class="min-w-full border-collapse border border-gray-300"><thead>${headerRow}</thead><tbody>${tableRows}</tbody></table></div>`;
-          }
-        )
-        // Ensure paragraphs have proper spacing
-        .replace(/\n\n/g, '</p><p class="my-2">')
-        // Convert list items to proper lists
-        .replace(
-          /(<li[^>]*>.*?<\/li>)\s*(<li[^>]*>.*?<\/li>)/gs,
-          function (match) {
-            return '<ul class="my-2">' + match + "</ul>";
-          }
-        )
-        // Fix any unmatched paragraph tags
-        .replace(/<\/p>(\s*)<p/g, "</p>$1<p")
-        // Wrap content in paragraph if not already wrapped
-        .replace(/^(.+)(?!\<\/p\>)$/gm, function (match) {
-          if (!match.includes("<")) return `<p>${match}</p>`;
-          return match;
-        })
+    // Bold (**text**)
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    // Italic (*text*)
+    formatted = formatted.replace(/\*(.*?)\*/g, "<em>$1</em>");
+    // Inline code (`code`)
+    formatted = formatted.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 rounded text-blue-600">$1</code>');
+    // Headings
+    formatted = formatted.replace(/^### (.*?)$/gm, '<h3 class="text-lg font-bold my-2 text-gray-800">$1</h3>');
+    formatted = formatted.replace(/^## (.*?)$/gm, '<h2 class="text-xl font-bold my-3 text-gray-800">$1</h2>');
+    formatted = formatted.replace(/^# (.*?)$/gm, '<h1 class="text-2xl font-bold my-3 text-gray-900">$1</h1>');
+    // Bullet points
+    formatted = formatted.replace(/^- (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>');
+    formatted = formatted.replace(/^• (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>');
+    // Numbered lists
+    formatted = formatted.replace(/^(\d+)\. (.*?)$/gm, '<li class="ml-4 list-decimal">$2</li>');
+    // Blockquotes
+    formatted = formatted.replace(
+      /^> (.*?)$/gm,
+      '<blockquote class="border-l-4 border-gray-300 pl-3 italic text-gray-700 my-2">$1</blockquote>'
     );
+    // Links
+    formatted = formatted.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" class="text-blue-600 underline hover:text-blue-800">$1</a>'
+    );
+    // Horizontal rule
+    formatted = formatted.replace(/^---$/gm, '<hr class="my-3 border-t border-gray-300">');
+    // Tables (simple support)
+    formatted = formatted.replace(
+      /\n\n\|(.+)\|\n\|(?:[-:]+\|)+\n((.*\n)+?)\n/g,
+      function (match, headers, rows) {
+        const headerCells = headers
+          .split("|")
+          .map((header) => header.trim())
+          .filter(Boolean);
+        const headerRow =
+          "<tr>" +
+          headerCells
+            .map((cell) => `<th class="border p-2 bg-gray-100">${cell}</th>`)
+            .join("") +
+          "</tr>";
+
+        const tableRows = rows
+          .trim()
+          .split("\n")
+          .map((row) => {
+            const cells = row
+              .split("|")
+              .map((cell) => cell.trim())
+              .filter(Boolean);
+            return (
+              "<tr>" +
+              cells
+                .map((cell) => `<td class="border p-2">${cell}</td>`)
+                .join("") +
+              "</tr>"
+            );
+          })
+          .join("");
+
+        return `<div class="overflow-x-auto my-3"><table class="min-w-full border-collapse border border-gray-300"><thead>${headerRow}</thead><tbody>${tableRows}</tbody></table></div>`;
+      }
+    );
+    // Ensure paragraphs have proper spacing
+    formatted = formatted.replace(/\n\n/g, '</p><p class="my-2">');
+    // Convert list items to proper lists (group consecutive <li>)
+    formatted = formatted.replace(
+      /((?:<li[^>]*>.*?<\/li>\s*)+)/gs,
+      (match) => `<ul class="my-2">${match.trim()}</ul>`
+    );
+    // Fix any unmatched paragraph tags
+    formatted = formatted.replace(/<\/p>(\s*)<p/g, "</p>$1<p");
+    // Wrap content in paragraph if not already wrapped
+    formatted = formatted.replace(/^(.+)(?!<\/p>)$/gm, function (match) {
+      if (!match.includes("<")) return `<p>${match}</p>`;
+      return match;
+    });
+
+    // Restore code blocks with copy to clipboard button
+    formatted = formatted.replace(/\[\[CODEBLOCK_(\d+)\]\]/g, (match, idx) => {
+      const { lang, code, raw } = codeBlocks[idx];
+      const codeId = `codeblock-${Math.random().toString(36).slice(2, 10)}-${idx}`;
+      return `
+        <div class="relative group my-2">
+          <button
+            class="absolute top-2 right-2 z-10 bg-white/80 hover:bg-gray-200 cursor-pointer border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            onclick="(function(){
+              const code = document.getElementById('${codeId}');
+              if (code) {
+                navigator.clipboard.writeText(code.innerText);
+                const btn = event.currentTarget;
+                const prev = btn.innerText;
+                btn.innerText = 'Copied!';
+                setTimeout(()=>{btn.innerText = prev}, 1200);
+              }
+            })()"
+            type="button"
+            title="Copy to clipboard"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16h8a2 2 0 002-2V8a2 2 0 00-2-2H8a2 2 0 00-2 2v6a2 2 0 002 2z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" /></svg>
+          </button>
+          <pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2"><code id="${codeId}" class="language-${lang}">${code}</code></pre>
+        </div>
+      `;
+    });
+
+    return formatted;
   };
 
   const formatExactTimestamp = (timestamp) => {
@@ -585,25 +605,22 @@ Please try again in a moment, and I'll be happy to provide a more detailed expla
             const isUserMessage = message.role === "user";
 
             // Message bubble styles based on sender
-            const messageBubbleClasses = `max-w-[90%] sm:max-w-[85%] lg:max-w-3xl p-2.5 sm:p-3 lg:p-4 rounded-lg ${
-              isUserMessage
-                ? "bg-blue-600 text-white"
-                : "bg-white border shadow-sm"
-            }`;
+            const messageBubbleClasses = `max-w-[90%] sm:max-w-[85%] lg:max-w-3xl p-2.5 sm:p-3 lg:p-4 rounded-lg ${isUserMessage
+              ? "bg-blue-600 text-white"
+              : "bg-white border shadow-sm"
+              }`;
 
             // Content styles based on sender
-            const contentClasses = `prose prose-sm max-w-none text-xs sm:text-sm lg:text-base leading-relaxed ${
-              isUserMessage
-                ? "!text-white"
-                : "prose-headings:text-gray-800 prose-p:text-gray-700 prose-li:text-gray-700 prose-code:text-blue-600"
-            }`;
+            const contentClasses = `prose prose-sm max-w-none text-xs sm:text-sm lg:text-base leading-relaxed ${isUserMessage
+              ? "!text-white"
+              : "prose-headings:text-gray-800 prose-p:text-gray-700 prose-li:text-gray-700 prose-code:text-blue-600"
+              }`;
 
             return (
               <div
                 key={index}
-                className={`flex gap-2 ${
-                  isUserMessage ? "justify-end" : "justify-start"
-                }`}
+                className={`flex gap-2 ${isUserMessage ? "justify-end" : "justify-start"
+                  }`}
               >
                 {/* AI Avatar - Only show for AI messages */}
                 {!isUserMessage && (
@@ -637,9 +654,8 @@ Please try again in a moment, and I'll be happy to provide a more detailed expla
                   {/* Timestamp */}
                   {message.timestamp && (
                     <div
-                      className={`text-xs ${
-                        isUserMessage ? "text-blue-100" : "text-gray-400"
-                      } mt-1.5 sm:mt-2`}
+                      className={`text-xs ${isUserMessage ? "text-blue-100" : "text-gray-400"
+                        } mt-1.5 sm:mt-2`}
                     >
                       <div className="font-medium">
                         {formatExactTimestamp(message.timestamp)}
@@ -755,11 +771,10 @@ Please try again in a moment, and I'll be happy to provide a more detailed expla
                 chatSessions.map((session) => (
                   <div
                     key={session.id}
-                    className={`p-3 sm:p-4 border-b border-white/10 hover:bg-white/20 cursor-pointer flex items-center justify-between transition-all duration-200 ${
-                      session.id === currentSessionId
-                        ? "bg-blue-500/20 border-blue-400/30"
-                        : ""
-                    }`}
+                    className={`p-3 sm:p-4 border-b border-white/10 hover:bg-white/20 cursor-pointer flex items-center justify-between transition-all duration-200 ${session.id === currentSessionId
+                      ? "bg-blue-500/20 border-blue-400/30"
+                      : ""
+                      }`}
                     onClick={() => switchToSession(session.id)}
                   >
                     <div className="flex-1 min-w-0 pr-2">
