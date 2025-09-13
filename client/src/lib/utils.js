@@ -38,16 +38,23 @@ const DEFAULT_AVATAR = '/default-avatar.svg'
  * @returns {string} - URL to profile image
  */
 export function getUserProfileImage(user, userProfile) {
-  // Check sources in order of preference, only two options as per requirements
-  const profileImage = userProfile?.profileImageUrl || user?.photoURL || DEFAULT_AVATAR;
+  // Check if we should use default image directly to avoid errors
+  // Google auth images can sometimes fail to load in development
+  const isGoogleAuthImage = user?.photoURL?.includes('googleusercontent.com');
   
-  // For debugging
-  console.log("Profile image selection:", {
-    userProfileImage: userProfile?.profileImageUrl,
-    userPhotoURL: user?.photoURL,
-    fallbackImage: DEFAULT_AVATAR,
-    selectedImage: profileImage
-  });
+  // Check sources in order of preference
+  const profileImage = 
+    userProfile?.profileImageUrl || 
+    (!isGoogleAuthImage ? user?.photoURL : null) || 
+    DEFAULT_AVATAR;
+  
+  // Remove logging that's causing console spam
+  // console.log("Profile image selection:", {
+  //   userProfileImage: userProfile?.profileImageUrl,
+  //   userPhotoURL: user?.photoURL,
+  //   fallbackImage: DEFAULT_AVATAR,
+  //   selectedImage: profileImage
+  // });
   
   return profileImage;
 }
