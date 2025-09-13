@@ -311,7 +311,7 @@ export function Roadmap() {
               </p>
               <Button
                 variant="outline"
-                className="bg-white"
+                className="bg-white text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
                 onClick={() => {
                   // Navigate to login page or trigger login modal
                   window.location.href = "/auth/login";
@@ -381,7 +381,7 @@ export function Roadmap() {
               )}
 
               <Button
-                className="w-full"
+                className="w-full text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
                 onClick={generateCustomRoadmap}
                 disabled={
                   isGenerating ||
@@ -392,13 +392,13 @@ export function Roadmap() {
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2 animate-spin" />
                     Generating your roadmap...
                   </>
                 ) : (
                   <>
                     Generate Custom Roadmap
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    <ArrowRight className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
                   </>
                 )}
               </Button>
@@ -498,16 +498,16 @@ export function Roadmap() {
                     <div className="flex flex-col gap-2 mt-auto">
                       <Button
                         size="sm"
-                        className="w-full text-xs sm:text-sm h-9"
+                        className="w-full text-[10px] xs:text-xs sm:text-sm h-7 xs:h-8 sm:h-9 py-0.5 xs:py-1 sm:py-1.5"
                         onClick={() => viewRoadmapDetails(roadmap)}
                       >
                         View Roadmap
-                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
+                        <ArrowRight className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="w-full text-xs sm:text-sm text-red-600 hover:bg-red-50 border-red-200 h-9"
+                        className="w-full text-[10px] xs:text-xs sm:text-sm text-red-600 hover:bg-red-50 border-red-200 h-7 xs:h-8 sm:h-9 py-0.5 xs:py-1 sm:py-1.5"
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteRoadmap(roadmap.id);
@@ -516,13 +516,13 @@ export function Roadmap() {
                       >
                         {isDeleting ? (
                           <>
-                            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
+                            <Loader2 className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2 animate-spin" />
                             Deleting...
                           </>
                         ) : (
                           <>
                             Delete Roadmap
-                            <X className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
+                            <X className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
                           </>
                         )}
                       </Button>
@@ -543,12 +543,13 @@ export function Roadmap() {
             </p>
             <Button
               variant="outline"
+              className="text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
               Create Your First Roadmap
-              <ArrowRight className="h-4 w-4 ml-2" />
+              <ArrowRight className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
             </Button>
           </div>
         )}
@@ -556,20 +557,20 @@ export function Roadmap() {
 
       {/* Roadmap Details Modal */}
       {showRoadmapModal && selectedRoadmap && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex items-center justify-center z-50 p-2 sm:p-4 transition-all duration-300 overflow-hidden">
-          <div className="bg-white/95 backdrop-filter rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden border border-gray-100 flex flex-col">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex items-center justify-center z-100 p-2 sm:p-4 transition-all duration-300 overflow-hidden">
+          <div className="bg-white/95 backdrop-filter rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] xs:max-h-[95vh] overflow-hidden border border-gray-100 flex flex-col">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white/80 backdrop-blur-sm z-10 border-b p-4 rounded-t-xl">
+            <div className="sticky top-0 bg-white/80 backdrop-blur-sm z-10 border-b p-3 sm:p-4 rounded-t-xl">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 sm:gap-3 max-w-[80%]">
-                  <div className="bg-blue-500/10 p-1.5 sm:p-2 rounded-lg hidden sm:block">
-                    <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                  <div className="bg-blue-500/10 p-1.5 sm:p-2 rounded-lg hidden xs:block">
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-1">
+                    <h2 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 line-clamp-1">
                       {selectedRoadmap.title}
                     </h2>
-                    <p className="text-xs sm:text-sm text-gray-500">
+                    <p className="text-xs xs:text-sm text-gray-500">
                       Created on {selectedRoadmap.dateCreated}
                     </p>
                   </div>
@@ -578,57 +579,57 @@ export function Roadmap() {
                   className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
                   onClick={() => setShowRoadmapModal(false)}
                 >
-                  <X className="h-5 w-5 text-gray-500" />
+                  <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                 </button>
               </div>
             </div>
 
-            <div className="p-4 my-2 space-y-6 overflow-y-auto flex-1">
+            <div className="p-3 sm:p-4 my-1 sm:my-2 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
               {/* Roadmap Overview */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 sm:p-5 rounded-xl shadow-sm border border-blue-100">
-                <h3 className="font-semibold text-base sm:text-lg text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
-                  <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-2 sm:p-3 md:p-5 rounded-xl shadow-sm border border-blue-100">
+                <h3 className="font-semibold text-sm xs:text-base sm:text-lg text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
+                  <Target className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
                   <span className="truncate">Overview</span>
                 </h3>
-                <p className="text-sm text-gray-700 mb-3 sm:mb-4 leading-relaxed break-words">
+                <p className="text-xs xs:text-sm text-gray-700 mb-2 sm:mb-3 md:mb-4 leading-relaxed break-words">
                   {selectedRoadmap.description}
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
                   <div className="bg-white/80 backdrop-blur-sm p-2 sm:p-3 rounded-lg flex items-center gap-2 sm:gap-3 shadow-sm">
-                    <div className="bg-blue-100 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                      <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                    <div className="bg-blue-100 p-1 xs:p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                      <Clock className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-blue-600" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm text-gray-500 truncate">
                         Total Duration
                       </p>
-                      <p className="text-sm sm:text-base font-medium truncate">
+                      <p className="text-xs xs:text-sm sm:text-base font-medium truncate">
                         {calculateTotalDuration(selectedRoadmap.data.nodes)}
                       </p>
                     </div>
                   </div>
                   <div className="bg-white/80 backdrop-blur-sm p-2 sm:p-3 rounded-lg flex items-center gap-2 sm:gap-3 shadow-sm">
-                    <div className="bg-green-100 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                      <Target className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                    <div className="bg-green-100 p-1 xs:p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                      <Target className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-green-600" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm text-gray-500 truncate">
                         Skills to Learn
                       </p>
-                      <p className="text-sm sm:text-base font-medium truncate">
+                      <p className="text-xs xs:text-sm sm:text-base font-medium truncate">
                         {selectedRoadmap.data.nodes?.length - 1 || 0}
                       </p>
                     </div>
                   </div>
                   <div className="bg-white/80 backdrop-blur-sm p-2 sm:p-3 rounded-lg flex items-center gap-2 sm:gap-3 shadow-sm">
-                    <div className="bg-purple-100 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                    <div className="bg-purple-100 p-1 xs:p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                      <Calendar className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-purple-600" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm text-gray-500 truncate">
                         Target Completion
                       </p>
-                      <p className="text-sm sm:text-base font-medium truncate">
+                      <p className="text-xs xs:text-sm sm:text-base font-medium truncate">
                         {new Date(
                           new Date(selectedRoadmap.dateCreated).getTime() +
                             selectedRoadmap.duration * 7 * 24 * 60 * 60 * 1000
@@ -641,22 +642,22 @@ export function Roadmap() {
 
               {/* Roadmap Timeline */}
               <div>
-                <h3 className="font-semibold text-base sm:text-lg text-gray-800 mb-3 sm:mb-5 flex items-center gap-2">
-                  <Milestone className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                <h3 className="font-semibold text-sm xs:text-base sm:text-lg text-gray-800 mb-2 xs:mb-3 sm:mb-5 flex items-center gap-2">
+                  <Milestone className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
                   <span className="truncate">Learning Path</span>
                 </h3>
-                <div className="space-y-5 sm:space-y-6">
+                <div className="space-y-4 xs:space-y-5 sm:space-y-6">
                   {selectedRoadmap.data.nodes?.map((node, index) => (
                     <div key={node.id || index} className="relative">
                       {/* Connection Line */}
                       {index < selectedRoadmap.data.nodes.length - 1 && (
-                        <div className="absolute left-4 sm:left-6 top-12 sm:top-14 h-[calc(100%-48px)] sm:h-[calc(100%-56px)] w-1 bg-gradient-to-b from-blue-400 to-blue-100 rounded-full z-0"></div>
+                        <div className="absolute left-3 xs:left-4 sm:left-6 top-8 xs:top-10 sm:top-14 h-[calc(100%-32px)] xs:h-[calc(100%-40px)] sm:h-[calc(100%-56px)] w-1 bg-gradient-to-b from-blue-400 to-blue-100 rounded-full z-0"></div>
                       )}
 
-                      <div className="flex gap-3 sm:gap-5">
+                      <div className="flex gap-2 xs:gap-3 sm:gap-5">
                         {/* Step Icon */}
                         <div
-                          className={`flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-md z-[5] ${
+                          className={`flex-shrink-0 w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-md z-[5] ${
                             index === 0
                               ? "bg-gradient-to-br from-green-400 to-green-600 text-white"
                               : index === selectedRoadmap.data.nodes.length - 1
@@ -665,27 +666,27 @@ export function Roadmap() {
                           }`}
                         >
                           {index === 0 ? (
-                            <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <MapPin className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-5 sm:w-5" />
                           ) : index ===
                             selectedRoadmap.data.nodes.length - 1 ? (
-                            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <CheckCircle className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-5 sm:w-5" />
                           ) : (
-                            <Milestone className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <Milestone className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-5 sm:w-5" />
                           )}
                         </div>
 
                         {/* Node Content */}
                         <div className="flex-1 min-w-0">
                           <Card className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative z-[1] overflow-hidden">
-                            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-4">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-                                <CardTitle className="text-sm sm:text-base md:text-lg text-gray-800 line-clamp-2 break-words">
+                            <CardHeader className="pb-1 xs:pb-2 sm:pb-3 px-2 xs:px-3 sm:px-6 pt-2 xs:pt-3 sm:pt-4">
+                              <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1 sm:gap-2">
+                                <CardTitle className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-800 line-clamp-2 break-words">
                                   {node.title}
                                 </CardTitle>
                                 {node.recommended_weeks && (
                                   <Badge
                                     variant="outline"
-                                    className="text-xs whitespace-nowrap bg-blue-50 text-blue-600 border-blue-200 w-fit flex-shrink-0"
+                                    className="text-[9px] xs:text-xs whitespace-nowrap bg-blue-50 text-blue-600 border-blue-200 w-fit flex-shrink-0"
                                   >
                                     {node.recommended_weeks}{" "}
                                     {node.recommended_weeks === 1
@@ -695,18 +696,18 @@ export function Roadmap() {
                                 )}
                               </div>
                             </CardHeader>
-                            <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-4">
-                              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed break-words">
+                            <CardContent className="space-y-2 xs:space-y-3 sm:space-y-4 px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-4">
+                              <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-relaxed break-words">
                                 {node.description}
                               </p>
 
                               {node.resources && node.resources.length > 0 && (
-                                <div className="bg-gray-50/80 rounded-lg p-2 sm:p-3">
-                                  <h4 className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 flex items-center gap-1.5">
-                                    <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
+                                <div className="bg-gray-50/80 rounded-lg p-1.5 xs:p-2 sm:p-3">
+                                  <h4 className="text-[10px] xs:text-xs sm:text-sm font-medium mb-1 xs:mb-1.5 sm:mb-2 flex items-center gap-1 xs:gap-1.5">
+                                    <BookOpen className="h-2.5 w-2.5 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
                                     <span className="truncate">Resources:</span>
                                   </h4>
-                                  <ul className="text-xs sm:text-sm text-gray-600 space-y-1.5 sm:space-y-2 pl-4 sm:pl-5">
+                                  <ul className="text-[10px] xs:text-xs sm:text-sm text-gray-600 space-y-1 xs:space-y-1.5 sm:space-y-2 pl-3 xs:pl-4 sm:pl-5">
                                     {node.resources.map((resource, i) => (
                                       <li
                                         key={i}
@@ -736,12 +737,12 @@ export function Roadmap() {
               {/* Connections/Dependencies Visualization */}
               {selectedRoadmap.data.edges &&
                 selectedRoadmap.data.edges.length > 0 && (
-                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-3 sm:p-5 rounded-xl shadow-sm border border-indigo-100">
-                    <h3 className="font-semibold text-base sm:text-lg text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-                      <Route className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600 flex-shrink-0" />
+                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-2 xs:p-3 sm:p-5 rounded-xl shadow-sm border border-indigo-100">
+                    <h3 className="font-semibold text-sm xs:text-base sm:text-lg text-gray-800 mb-2 xs:mb-3 sm:mb-4 flex items-center gap-2">
+                      <Route className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-indigo-600 flex-shrink-0" />
                       <span className="truncate">Skill Dependencies</span>
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-3">
                       {selectedRoadmap.data.edges.map((edge, index) => {
                         const fromNode = selectedRoadmap.data.nodes.find(
                           (n) => n.id === edge.from
@@ -755,16 +756,16 @@ export function Roadmap() {
                         return (
                           <div
                             key={index}
-                            className="bg-white/80 backdrop-blur-sm p-2 sm:p-3 rounded-lg flex items-center gap-2 shadow-sm overflow-hidden"
+                            className="bg-white/80 backdrop-blur-sm p-1.5 xs:p-2 sm:p-3 rounded-lg flex items-center gap-1.5 xs:gap-2 shadow-sm overflow-hidden"
                           >
-                            <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                              <Route className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600" />
+                            <div className="flex-shrink-0 w-5 h-5 xs:w-6 xs:h-6 sm:w-8 sm:h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                              <Route className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 text-indigo-600" />
                             </div>
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm overflow-hidden min-w-0 flex-1">
+                            <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 text-[10px] xs:text-xs sm:text-sm overflow-hidden min-w-0 flex-1">
                               <span className="font-medium text-gray-800 line-clamp-1 min-w-0 flex-shrink truncate">
                                 {fromNode.title}
                               </span>
-                              <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0 mx-1" />
+                              <ArrowRight className="h-2 w-2 xs:h-2.5 xs:w-2.5 sm:h-3 sm:w-3 text-gray-400 flex-shrink-0 mx-0.5 xs:mx-1" />
                               <span className="font-medium text-gray-800 line-clamp-1 min-w-0 flex-shrink truncate">
                                 {toNode.title}
                               </span>
@@ -778,23 +779,24 @@ export function Roadmap() {
             </div>
 
             {/* Action Buttons */}
-            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm z-10 border-t shadow-md p-4 rounded-b-xl w-full">
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm z-10 border-t shadow-md p-3 xs:p-4 rounded-b-xl w-full">
               <div className="flex gap-2 sm:gap-4">
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs sm:text-sm py-1.5 sm:py-2"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
                   onClick={() => {
                     setShowRoadmapModal(false);
                     // Could add more actions here like printing, sharing, etc.
                   }}
                 >
-                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <FileText className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2" />
                   Export PDF (Coming Soon)
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm py-1.5 sm:py-2"
+                  className="flex-1 border-gray-300 hover:bg-gray-50 text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
                   onClick={() => setShowRoadmapModal(false)}
                 >
+                  <X className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2" />
                   Close
                 </Button>
               </div>
