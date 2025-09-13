@@ -311,7 +311,7 @@ export function Roadmap() {
               </p>
               <Button
                 variant="outline"
-                className="bg-white text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
+                className="bg-white"
                 onClick={() => {
                   // Navigate to login page or trigger login modal
                   window.location.href = "/auth/login";
@@ -381,7 +381,7 @@ export function Roadmap() {
               )}
 
               <Button
-                className="w-full text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
+                className="w-full"
                 onClick={generateCustomRoadmap}
                 disabled={
                   isGenerating ||
@@ -392,13 +392,13 @@ export function Roadmap() {
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Generating your roadmap...
                   </>
                 ) : (
                   <>
                     Generate Custom Roadmap
-                    <ArrowRight className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
+                    <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
               </Button>
@@ -498,16 +498,16 @@ export function Roadmap() {
                     <div className="flex flex-col gap-2 mt-auto">
                       <Button
                         size="sm"
-                        className="w-full text-[10px] xs:text-xs sm:text-sm h-7 xs:h-8 sm:h-9 py-0.5 xs:py-1 sm:py-1.5"
+                        className="w-full text-xs sm:text-sm h-9"
                         onClick={() => viewRoadmapDetails(roadmap)}
                       >
                         View Roadmap
-                        <ArrowRight className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
+                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="w-full text-[10px] xs:text-xs sm:text-sm text-red-600 hover:bg-red-50 border-red-200 h-7 xs:h-8 sm:h-9 py-0.5 xs:py-1 sm:py-1.5"
+                        className="w-full text-xs sm:text-sm text-red-600 hover:bg-red-50 border-red-200 h-9"
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteRoadmap(roadmap.id);
@@ -516,13 +516,13 @@ export function Roadmap() {
                       >
                         {isDeleting ? (
                           <>
-                            <Loader2 className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2 animate-spin" />
+                            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
                             Deleting...
                           </>
                         ) : (
                           <>
                             Delete Roadmap
-                            <X className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
+                            <X className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                           </>
                         )}
                       </Button>
@@ -543,13 +543,12 @@ export function Roadmap() {
             </p>
             <Button
               variant="outline"
-              className="text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
               Create Your First Roadmap
-              <ArrowRight className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 ml-1 xs:ml-1.5 sm:ml-2" />
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         )}
@@ -780,23 +779,23 @@ export function Roadmap() {
 
             {/* Action Buttons */}
             <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm z-10 border-t shadow-md p-3 xs:p-4 rounded-b-xl w-full">
-              <div className="flex gap-2 sm:gap-4">
+              <div className="flex gap-3 flex-col sm:flex-row">
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs xs:text-sm py-2 px-3 xs:px-4"
                   onClick={() => {
                     setShowRoadmapModal(false);
                     // Could add more actions here like printing, sharing, etc.
                   }}
                 >
-                  <FileText className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2" />
+                  <FileText className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1.5 xs:mr-2" />
                   Export PDF (Coming Soon)
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 border-gray-300 hover:bg-gray-50 text-[10px] xs:text-xs sm:text-sm py-1 xs:py-1.5 sm:py-2"
+                  className="flex-1 border-gray-300 hover:bg-gray-100 text-xs xs:text-sm py-2 px-3 xs:px-4 text-gray-700"
                   onClick={() => setShowRoadmapModal(false)}
                 >
-                  <X className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1 xs:mr-1.5 sm:mr-2" />
+                  <X className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 mr-1.5 xs:mr-2" />
                   Close
                 </Button>
               </div>

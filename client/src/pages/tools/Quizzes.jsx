@@ -424,8 +424,9 @@ export function Quizzes() {
     if (!showQuizModal || !currentQuiz) return null;
 
     if (showResults && results) {
+      // Pop Up showing results
       return (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[999] p-2 sm:p-4">
           <div className="bg-white/90 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl shadow-2xl max-w-xs sm:max-w-2xl lg:max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
             {/* Results Header */}
             <div className="p-4 sm:p-6 text-center border-b border-white/20">
@@ -500,7 +501,7 @@ export function Quizzes() {
       ((currentQuestion + 1) / currentQuiz.quiz_data.questions.length) * 100;
 
     return (
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[999] p-2 sm:p-4">
         <div className="bg-white/90 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl shadow-2xl max-w-xs sm:max-w-2xl lg:max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
           {/* Quiz Header */}
           <div className="p-4 sm:p-6 border-b border-white/20">
