@@ -14,8 +14,100 @@ import vertexai
 from vertexai.generative_models import GenerativeModel
 from google.oauth2 import service_account
 from ..config import Config
+import re
 
 resume_bp = Blueprint("resume", __name__)
+
+
+def _safe_extract_json(text: str):
+    """Best-effort extract a JSON object from arbitrary LLM text.
+
+    - Tries direct json.loads.
+    - If fails, attempts to find the first {...} block.
+    - Returns dict or raises ValueError.
+    """
+    if not text:
+        raise ValueError("Empty text")
+    text = text.strip()
+    # Quick path
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+
+    # Attempt to locate the first JSON object in the text
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end != -1 and end > start:
+        candidate = text[start:end + 1]
+        try:
+            return json.loads(candidate)
+        except Exception:
+            # Try to clean common issues like trailing commas
+            cleaned = candidate.replace("\n", " ")
+            # Remove code fences if present
+            if cleaned.startswith('```'):
+                cleaned = cleaned.strip('`')
+            try:
+                return json.loads(cleaned)
+            except Exception as e:
+                raise ValueError(f"Failed to parse JSON candidate: {e}")
+
+    raise ValueError("No JSON object found in text")
+
+
+def _normalize_analysis(obj: dict) -> dict:
+    """Normalize parsed analysis into the required schema.
+
+    Ensures keys: strengths (list[str]), improvements (list[str]),
+    match_score (int 0..100), summary (str). Coerces types safely.
+    """
+    def to_list(val):
+        if val is None:
+            return []
+        if isinstance(val, list):
+            # stringify items
+            return [str(x).strip() for x in val if str(x).strip()]
+        if isinstance(val, str):
+            # split on newlines or semicolons/bullets
+            parts = [p.strip(" -•\t") for p in re.split(r"[\n;]+", val) if p.strip()]
+            return parts
+        return [str(val).strip()]
+
+    def to_score(val):
+        try:
+            # Some models may return like "85%"
+            if isinstance(val, str) and val.endswith('%'):
+                val = val[:-1]
+            score = int(round(float(val)))
+            return max(0, min(100, score))
+        except Exception:
+            return 0
+
+    def to_str(val):
+        if val is None:
+            return ""
+        if isinstance(val, (dict, list)):
+            try:
+                return json.dumps(val, ensure_ascii=False)
+            except Exception:
+                return str(val)
+        return str(val)
+
+    # Allow some common aliasing
+    strengths = obj.get('strengths') or obj.get('pros') or obj.get('good')
+    improvements = obj.get('improvements') or obj.get('cons') or obj.get('suggestions') or obj.get('areas_to_improve')
+    match_score = obj.get('match_score') or obj.get('match') or obj.get('score')
+    summary = obj.get('summary') or obj.get('overview') or obj.get('notes')
+
+    normalized = {
+        'strengths': to_list(strengths),
+        'improvements': to_list(improvements),
+        'match_score': to_score(match_score),
+        'summary': to_str(summary),
+    }
+
+    return normalized
 
 
 @resume_bp.route("/api/resume/upload", methods=["POST"])
@@ -55,37 +147,42 @@ def upload_resume():
 def analyze_resume():
     """Analyze resume against provided job description.
 
-    Expected JSON: {"resume_url": "...", "job_description": "..."}
-    Steps (future):
-      1. Fetch resume text (OCR / parsing if needed)
-      2. Call Vertex AI for semantic comparison & gap analysis
-      3. Return suggestions: { strengths: [], improvements: [], score }
+    Expected JSON (one of):
+      - {"public_id": "...", "file_format": "pdf|docx", "job_description": "..."}
+      - {"resume_text": "...", "job_description": "..."}
+
+    Behavior:
+      - If "resume_text" provided, analyze that text directly.
+      - Else require Cloudinary "public_id" and optional "file_format" (default: pdf) to fetch & parse.
     """
 
-
-    data = request.get_json()
+    data = request.get_json() or {}
+    resume_text = (data.get("resume_text") or "").strip()
     public_id = data.get("public_id")
-    job_description = data.get("job_description")
-    file_format = data.get("file_format", "pdf")  # default to pdf if not provided
+    job_description = (data.get("job_description") or "").strip()
+    file_format = (data.get("file_format") or "pdf").lower()
 
-    if not public_id or not job_description:
-        return jsonify({"error": "Missing public_id or job_description"}), 400
+    if not job_description:
+        return jsonify({"error": "'job_description' is required"}), 400
 
-    # Download resume file from Cloudinary (private)
-    try:
-        file_bytes = fetch_file_from_cloudinary(public_id, resource_type="raw", file_format=file_format)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_format}") as tmp:
-            tmp.write(file_bytes)
-            tmp_path = tmp.name
-        if file_format == "pdf":
-            resume_text = extract_text_from_pdf(tmp_path)
-        elif file_format == "docx":
-            resume_text = extract_text_from_docx(tmp_path)
-        else:
-            return jsonify({"error": "Unsupported resume file type"}), 400
-        os.remove(tmp_path)
-    except Exception as e:
-        return jsonify({"error": f"Failed to fetch or parse resume: {str(e)}"}), 500
+    if not resume_text:
+        if not public_id:
+            return jsonify({"error": "Provide either 'resume_text' or 'public_id'"}), 400
+        # Download resume file from Cloudinary (private)
+        try:
+            file_bytes = fetch_file_from_cloudinary(public_id, resource_type="raw", file_format=file_format)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_format}") as tmp:
+                tmp.write(file_bytes)
+                tmp_path = tmp.name
+            if file_format == "pdf":
+                resume_text = extract_text_from_pdf(tmp_path)
+            elif file_format == "docx":
+                resume_text = extract_text_from_docx(tmp_path)
+            else:
+                return jsonify({"error": "Unsupported resume file type"}), 400
+            os.remove(tmp_path)
+        except Exception as e:
+            return jsonify({"error": f"Failed to fetch or parse resume: {str(e)}"}), 500
 
     # Vertex AI Gemini setup (same as roadmap.py)
     try:
@@ -109,7 +206,28 @@ def analyze_resume():
             f"Resume:\n{resume_text}\n\nJob Description:\n{job_description}"
         )
         response = model.generate_content(prompt)
-        analysis = response.text
-        return jsonify({"analysis": analysis})
+        analysis_text = response.text or ""
+
+        # Parse and normalize the model response into required schema
+        try:
+            parsed = _safe_extract_json(analysis_text)
+            print(parsed)
+            normalized = _normalize_analysis(parsed)
+            print(normalized)
+        except Exception:
+            # Fallback: return defaults and include raw for troubleshooting
+            normalized = {
+                'strengths': [],
+                'improvements': [],
+                'match_score': 0,
+                'summary': "",
+            }
+            return jsonify({
+                "analysis": normalized,
+                "raw": analysis_text,
+                "warning": "LLM response was not valid JSON; returned defaults with raw included."
+            })
+
+        return jsonify({"analysis": normalized})
     except Exception as e:
         return jsonify({"error": f"Gemini analysis failed: {str(e)}"}), 500
