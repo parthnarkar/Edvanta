@@ -6,7 +6,7 @@ import tempfile
 from app.config import Config
 
 
-CLOUDINARY_UPLOAD_URL = f"https://api.cloudinary.com/v1_1/{Config.CLOUDINARY_CLOUD_NAME}/video/upload"
+CLOUDINARY_UPLOAD_URL = f"https://api.cloudinary.com/v1_1/dnihe4ihi/video/upload"
 UPLOAD_PRESET = "podcast-visualizer"
 
 cloudinary.config(
