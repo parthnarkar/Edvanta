@@ -61,7 +61,7 @@ export function Navbar() {
                 className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
               />
               <span
-                className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600"
+                className="text-lg sm:text-xl lg:text-2xl font-bold text-primary"
                 style={{
                   fontFamily:
                     "Poppins, Inter, system-ui, -apple-system, sans-serif",
@@ -73,36 +73,37 @@ export function Navbar() {
 
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              {user && (
-                <Link to="/dashboard" className="nav-link">
-                  Dashboard
-                </Link>
-              )}
+
             </div>
 
             {/* Desktop User Actions */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-5">
               {user ? (
-                <div className="flex items-center space-x-3">
-                  <Bell className="h-5 w-5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors duration-300" />
-                  <div className="flex items-center space-x-2">
-                    <img
-                      src={getUserProfileImage(user, userProfile)}
-                      alt="Profile"
-                      className="w-8 h-8 rounded-full object-cover border border-blue-500"
-                      onError={(e) => {
-                        console.error("Error loading profile image:", e.target.src);
-                        e.target.src = '/default-avatar.svg';
-                      }}
-                    />
-                    <span className="text-sm font-medium text-gray-900 hidden lg:inline">
-                      {userProfile?.name || user.displayName || "User"}
-                    </span>
+                <>
+                  <Link to="/dashboard" className="nav-link">
+                    Dashboard
+                  </Link>
+                  <div className="flex items-center space-x-5">
+                    <Bell className="h-5 w-5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors duration-300" />
+                    <div className="flex items-center space-x-2">
+                      <img
+                        src={getUserProfileImage(user, userProfile)}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-full object-cover border border-blue-500"
+                        onError={(e) => {
+                          console.error("Error loading profile image:", e.target.src);
+                          e.target.src = '/default-avatar.svg';
+                        }}
+                      />
+                      <span className="text-sm font-medium text-gray-900 hidden lg:inline">
+                        {userProfile?.name || user.displayName || "User"}
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                      <LogOut className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
+                </>
               ) : (
                 <div className="flex items-center space-x-3">
                   <Button variant="ghost" asChild>
@@ -139,9 +140,8 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         <div
-          className={`fixed top-16 right-0 h-[calc(100vh-4rem)] w-80 max-w-[85vw] bg-white border-l border-gray-200 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 md:hidden ${
-            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`fixed top-16 right-0 h-[calc(100vh-4rem)] w-80 max-w-[85vw] bg-white border-l border-gray-200 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 md:hidden ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           <div className="flex flex-col h-full">
             {/* User Profile Section */}
