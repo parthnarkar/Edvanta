@@ -4,10 +4,13 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { Navbar } from "./components/Layout/Navbar";
 import { Sidebar } from "./components/Layout/Sidebar";
 import { useAuth } from "./hooks/useAuth";
+import { PageTransition } from "./components/ui/PageTransition";
+import { LoadingIndicator } from "./components/ui/LoadingIndicator";
 
 // Pages
 import Home from "./pages/Home";
@@ -26,31 +29,17 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    // Use a simpler version of the main loader for route transitions
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
-        <div className="text-center loader-appear">
-          <div className="mb-4">
-            <img 
-              src="/edvanta-logo.png" 
-              alt="Edvanta Logo" 
-              className="h-20 w-auto mx-auto logo-pulse"
-            />
-          </div>
-          
-          <p className="mt-4 text-gray-600 font-medium">Verifying access...</p>
-          
-          <div className="mt-3 flex justify-center space-x-2">
-            <span className="h-1.5 w-1.5 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "0ms" }}></span>
-            <span className="h-1.5 w-1.5 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></span>
-            <span className="h-1.5 w-1.5 bg-primary/70 rounded-full animate-pulse" style={{ animationDelay: "600ms" }}></span>
-          </div>
-        </div>
+        <LoadingIndicator 
+          message="Verifying access..." 
+          size="default"
+        />
       </div>
     );
   }
 
-  return user ? children : <Navigate to="/auth/login" />;
+  return user ? children : <Navigate to="/" replace />;
 }
 
 // Layout Component for Dashboard Pages
@@ -58,10 +47,12 @@ function DashboardLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="flex">
+      <div className="flex pt-16"> {/* Added pt-16 to account for fixed navbar height */}
         <Sidebar />
         <main className="flex-1 p-3 sm:p-4 md:p-6 min-h-[calc(100vh-4rem)] overflow-x-hidden">
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
       </div>
     </div>
@@ -73,7 +64,11 @@ function PublicLayout({ children }) {
   return (
     <div className="min-h-screen">
       <Navbar />
-      {children}
+      <div className="pt-16"> {/* Added pt-16 to account for fixed navbar height */}
+        <PageTransition>
+          {children}
+        </PageTransition>
+      </div>
     </div>
   );
 }
@@ -103,24 +98,11 @@ function App() {
   if (loading || showLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
-        <div className="text-center loader-appear">
-          <div className="mb-6">
-            <img 
-              src="/edvanta-logo.png" 
-              alt="Edvanta Logo" 
-              className="h-24 w-auto mx-auto logo-pulse"
-            />
-          </div>
-          
-          <p className="mt-6 text-gray-600 font-medium">Loading your experience...</p>
-          <p className="mt-1 text-xs text-gray-500">Preparing personalized learning tools</p>
-          
-          <div className="mt-6 flex justify-center space-x-2">
-            <span className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "0ms" }}></span>
-            <span className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></span>
-            <span className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "600ms" }}></span>
-          </div>
-        </div>
+        <LoadingIndicator 
+          message="Loading your experience..." 
+          size="large"
+        />
+        <p className="mt-1 text-xs text-gray-500">Preparing personalized learning tools</p>
       </div>
     );
   }
@@ -138,8 +120,22 @@ function App() {
           }
         />
 
-        <Route path="/auth/login" element={<Login />} />
-        <Route path="/auth/signup" element={<Signup />} />
+        <Route 
+          path="/auth/login" 
+          element={
+            <PageTransition>
+              <Login />
+            </PageTransition>
+          } 
+        />
+        <Route 
+          path="/auth/signup" 
+          element={
+            <PageTransition>
+              <Signup />
+            </PageTransition>
+          } 
+        />
 
         {/* Protected Dashboard Routes */}
         <Route
@@ -219,7 +215,7 @@ function App() {
           }
         />
 
-        {/* Catch all route */}
+        {/* Catch all route - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

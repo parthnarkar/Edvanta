@@ -28,21 +28,18 @@ def connect_to_mongodb():
         dynamic_collection = Config.MONGODB_ROADMAP_COLLECTION
 
         if not connection_string or not db_name:
-            print("⚠️ MongoDB connection string or database name not configured")
             return None, None, None
 
         # Attempt to connect with a timeout
         client = MongoClient(connection_string)
         # Test the connection
         client.admin.command('ping')
-        print("✅ MongoDB connection successful")
 
         db = client[db_name]
         collection_name = dynamic_collection
 
         return client, db, collection_name
     except Exception as e:
-        print(f"⚠️ Failed to connect to MongoDB: {e}")
         return None, None, None
 
 
@@ -135,11 +132,8 @@ def generate_roadmap():
 
             # Insert into MongoDB
             roadmap_collection.insert_one(roadmap_document)
-            print(f"✅ Roadmap saved for user: {user_email}")
         except Exception as db_error:
-            print(f"⚠️ Failed to save roadmap to database: {db_error}")
-            # Continue anyway - we can still return the generated roadmap
-            # even if storage failed
+            return jsonify({"error": f"Failed to save roadmap to database: {str(db_error)}"}), 500
 
         return jsonify({"roadmap": roadmap_data})
     except Exception as e:
@@ -181,7 +175,6 @@ def get_user_roadmaps():
 
         return jsonify(roadmaps)
     except Exception as e:
-        print(f"⚠️ Error retrieving roadmaps: {e}")
         return jsonify({"error": f"Failed to retrieve roadmaps: {str(e)}"}), 500
 
 
@@ -219,19 +212,18 @@ def get_roadmap_by_id(roadmap_id):
 
         # For DELETE method, delete the roadmap
         if request.method == "DELETE":
-            result = roadmap_collection.delete_one({"id": roadmap_id, "user_email": user_email})
-            
+            result = roadmap_collection.delete_one(
+                {"id": roadmap_id, "user_email": user_email})
+
             if result.deleted_count > 0:
-                print(f"✅ Roadmap {roadmap_id} deleted for user: {user_email}")
                 return jsonify({"success": True, "message": "Roadmap deleted successfully"}), 200
             else:
                 return jsonify({"error": "Failed to delete roadmap"}), 500
-        
+
         # For GET method, return the roadmap
         # Convert ObjectId to string for JSON serialization
         roadmap["_id"] = str(roadmap["_id"])
         return jsonify(roadmap)
-        
+
     except Exception as e:
-        print(f"⚠️ Error with roadmap {roadmap_id}: {e}")
         return jsonify({"error": f"Operation failed: {str(e)}"}), 500

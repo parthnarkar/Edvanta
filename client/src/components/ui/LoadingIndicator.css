@@ -1,0 +1,91 @@
+/* LoadingIndicator Animations */
+@keyframes pulse-and-float {
+  0%, 100% { 
+    transform: translateY(0) scale(1); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: translateY(-5px) scale(0.8); 
+    opacity: 0.5; 
+  }
+}
+
+@keyframes progress-bar {
+  0% { 
+    transform: translateX(-100%); 
+    background-position: 0% 50%;
+  }
+  50% { 
+    transform: translateX(0); 
+    background-position: 100% 50%;
+  }
+  100% { 
+    transform: translateX(100%); 
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-10px); 
+  }
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes spin {
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.5;
+    filter: blur(10px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(15px);
+  }
+}
+
+/* Apply these animations to classes */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-spin {
+  animation: spin 3s linear infinite;
+}
+
+.animate-pulse-and-float {
+  animation: pulse-and-float 1.5s ease-in-out infinite;
+}
+
+.animate-progress-bar {
+  animation: progress-bar 2.5s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}

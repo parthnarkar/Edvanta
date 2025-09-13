@@ -94,6 +94,8 @@ export function ConversationalTutor() {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStartingSession, setIsStartingSession] = useState(false);
+  const [isEndingSession, setIsEndingSession] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
@@ -952,6 +954,7 @@ export function ConversationalTutor() {
       return;
     }
 
+    setIsStartingSession(true);
     setIsLoading(true);
 
     // Record start time for minimum loading time
@@ -1013,6 +1016,7 @@ export function ConversationalTutor() {
     } finally {
       // Ensure minimum loading time of 2 seconds
       await enforceMinimumLoadingTime(startTime);
+      setIsStartingSession(false);
       setIsLoading(false);
     }
   };
@@ -1047,6 +1051,7 @@ export function ConversationalTutor() {
   const endSession = async () => {
     if (!sessionId) return;
 
+    setIsEndingSession(true);
     setIsLoading(true);
 
     // Record start time for minimum loading time
@@ -1124,6 +1129,7 @@ export function ConversationalTutor() {
     } finally {
       // Ensure minimum loading time of 2 seconds
       await enforceMinimumLoadingTime(startTime);
+      setIsEndingSession(false);
       setIsLoading(false);
     }
   };
@@ -1384,9 +1390,9 @@ export function ConversationalTutor() {
               <Button
                 className="w-full py-2 sm:py-3 text-sm sm:text-base"
                 onClick={startSession}
-                disabled={isLoading || !selectedSubject.trim()}
+                disabled={isStartingSession || isLoading || !selectedSubject.trim()}
               >
-                {isLoading ? (
+                {isStartingSession ? (
                   <>{isConnecting ? "Connecting..." : "Starting Session..."}</>
                 ) : (
                   <>{UI_TEXT.startButton}</>
@@ -1682,9 +1688,16 @@ export function ConversationalTutor() {
                 variant="destructive"
                 className="w-full py-1.5 sm:py-2 text-sm sm:text-base font-medium shadow-md hover:bg-red-600"
                 onClick={endSession}
-                disabled={isLoading}
+                disabled={isEndingSession || isLoading}
               >
-                End Session
+                {isEndingSession ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Ending Session...
+                  </>
+                ) : (
+                  <>End Session</>
+                )}
               </Button>
             </CardFooter>
           </Card>

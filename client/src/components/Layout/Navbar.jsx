@@ -50,7 +50,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur-sm fixed top-0 left-0 right-0 z-[100] shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -73,18 +73,23 @@ export function Navbar() {
 
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-
+              {user && (
+                <>
+                  <Link to="/" className="nav-link">
+                    Home
+                  </Link>
+                  <Link to="/dashboard" className="nav-link">
+                    Dashboard
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Desktop User Actions */}
             <div className="hidden md:flex items-center space-x-5">
               {user ? (
                 <>
-                  <Link to="/dashboard" className="nav-link">
-                    Dashboard
-                  </Link>
                   <div className="flex items-center space-x-5">
-                    <Bell className="h-5 w-5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors duration-300" />
                     <div className="flex items-center space-x-2">
                       <img
                         src={getUserProfileImage(user, userProfile)}
@@ -110,7 +115,7 @@ export function Navbar() {
                     <Link to="/auth/login">Login</Link>
                   </Button>
                   <Button variant="gradient" asChild>
-                    <Link to="/auth/signup">Get Started</Link>
+                    <Link to="/auth/signup">Sign Up</Link>
                   </Button>
                 </div>
               )}
@@ -118,9 +123,6 @@ export function Navbar() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-2">
-              {user && (
-                <Bell className="h-5 w-5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors duration-300" />
-              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -174,6 +176,13 @@ export function Navbar() {
               <div className="p-6 space-y-4">
                 {user ? (
                   <>
+                    <Link
+                      to="/"
+                      className="block px-4 py-3 text-base font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+                      onClick={closeMobileMenu}
+                    >
+                      Home
+                    </Link>
                     <Link
                       to="/dashboard"
                       className="block px-4 py-3 text-base font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"

@@ -27,7 +27,7 @@ export function Sidebar({ className }) {
   const location = useLocation()
 
   return (
-    <aside className={cn("hidden md:block w-64 bg-white border-r border-gray-200 min-h-screen shadow-sm", className)}>
+    <aside className={cn("hidden md:block w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] shadow-sm pt-0", className)}>
       <div className="p-4 md:p-6">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 md:mb-6">
           Learning Tools
