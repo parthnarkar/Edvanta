@@ -53,17 +53,43 @@ def upload_file_to_cloudinary(file):
 
 def fetch_file_from_cloudinary(public_id, resource_type="raw", file_format="pdf"):
   """
-  Fetch a private file from Cloudinary using the Admin API.
+  Fetch a file from Cloudinary by constructing a raw URL.
+  Avoid appending duplicate extensions when public_id already includes one.
   Returns the file content (bytes).
   """
   cloud_name = Config.CLOUDINARY_CLOUD_NAME
   api_key = Config.CLOUDINARY_API_KEY
   api_secret = Config.CLOUDINARY_API_SECRET
-  download_url = f"https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{public_id}.{file_format}"
 
-  response = requests.get(
-    download_url,
-    auth=(api_key, api_secret)
-  )
-  response.raise_for_status()
-  return response.content
+  pid = public_id or ""
+  # If public_id already ends with the expected extension, don't append another
+  if pid.lower().endswith(f".{file_format.lower()}"):
+    path = pid
+  else:
+    # If public_id appears to already include any extension, also avoid appending ours
+    base = os.path.basename(pid)
+    if "." in base:
+      path = pid
+    else:
+      path = f"{pid}.{file_format}"
+
+  def do_get(p):
+    url = f"https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{p}"
+    r = requests.get(url, auth=(api_key, api_secret))
+    if r.status_code == 404:
+      raise FileNotFoundError(url)
+    r.raise_for_status()
+    return r.content
+
+  # Try primary path first; on 404, toggle extension presence and retry once
+  try:
+    return do_get(path)
+  except FileNotFoundError:
+    # Toggle extension presence
+    base = os.path.basename(pid)
+    if "." in base:
+      # had extension; try without
+      alt = pid.rsplit(".", 1)[0]
+    else:
+      alt = f"{pid}.{file_format}"
+    return do_get(alt)
