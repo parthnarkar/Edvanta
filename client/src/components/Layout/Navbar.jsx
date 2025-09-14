@@ -59,6 +59,7 @@ export function Navbar() {
                 src="/edvanta-logo.png"
                 alt="Edvanta Logo"
                 className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
+                loading="lazy"
               />
               <span
                 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary"

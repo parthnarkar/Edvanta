@@ -1,4 +1,5 @@
-import HeroSpline from "../components/ui/HeroSpline";
+import React, { Suspense } from "react";
+const HeroSpline = React.lazy(() => import("../components/ui/HeroSpline"));
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import {
@@ -99,8 +100,10 @@ const comparisons = [
 function Home() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section with 3D Robot */}
-      <HeroSpline />
+      {/* Hero Section with 3D Robot (lazy loaded) */}
+      <Suspense fallback={<div className="h-64 flex items-center justify-center">Loading 3D Experience...</div>}>
+        <HeroSpline />
+      </Suspense>
 
       {/* Features Section */}
       <section id="features" className="py-12 sm:py-16 lg:py-20 bg-surface">

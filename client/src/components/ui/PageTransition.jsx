@@ -16,7 +16,7 @@ export function PageTransition({ children }) {
       key={location.pathname}
       className="w-full"
       style={{ 
-        animation: 'fadeIn 0.3s ease-out',
+        animation: 'fadeIn 0.5s ease-in-out',
         opacity: 1
       }}
     >
