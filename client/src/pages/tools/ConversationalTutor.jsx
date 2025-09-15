@@ -526,7 +526,10 @@ export function ConversationalTutor() {
             if (speechRecognitionRef.current && micState === MicState.ACTIVE) {
               speechRecognitionRef.current.stop();
               setTimeout(() => {
-                if (micState === MicState.ACTIVE) {
+                if (
+                  micState === MicState.ACTIVE &&
+                  speechRecognitionRef.current
+                ) {
                   speechRecognitionRef.current.start();
                 }
               }, 100);
@@ -658,8 +661,8 @@ export function ConversationalTutor() {
       return;
     }
 
-    // Stop any ongoing speech
-    stopSpeaking();
+    // Stop any ongoing speech, but do NOT auto-mic-on to avoid recursion
+    stopSpeaking(false);
 
     // Clear any previous transcript
     setTranscript("");
@@ -717,7 +720,7 @@ export function ConversationalTutor() {
     optimizeTextForSpeech(text)
       .then((optimizedText) => {
         // Stop any previous speech
-        stopSpeaking();
+        stopSpeaking(false); // pass false to not auto-mic-on from here
 
         // Create a new utterance
         const utterance = new SpeechSynthesisUtterance(optimizedText);
@@ -749,12 +752,20 @@ export function ConversationalTutor() {
         utterance.onend = () => {
           setIsSpeaking(false);
           setCurrentSpeakingMessageId(null);
+          // Auto-on mic after AI voice ends, if session is active and mic is not already active
+          if (isSessionActive && micState !== MicState.ACTIVE) {
+            startMicrophone();
+          }
         };
 
         utterance.onerror = (event) => {
           console.error("Speech synthesis error:", event);
           setIsSpeaking(false);
           setCurrentSpeakingMessageId(null);
+          // Also auto-on mic if error interrupts speech
+          if (isSessionActive && micState !== MicState.ACTIVE) {
+            startMicrophone();
+          }
         };
 
         // Store the utterance for later cancellation if needed
@@ -767,6 +778,20 @@ export function ConversationalTutor() {
         console.error("Error optimizing text for speech:", error);
         // Fallback to speaking the original text
         const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          setCurrentSpeakingMessageId(null);
+          if (isSessionActive && micState !== MicState.ACTIVE) {
+            startMicrophone();
+          }
+        };
+        utterance.onerror = (event) => {
+          setIsSpeaking(false);
+          setCurrentSpeakingMessageId(null);
+          if (isSessionActive && micState !== MicState.ACTIVE) {
+            startMicrophone();
+          }
+        };
         speechSynthesisRef.current.speak(utterance);
       });
   };
@@ -794,7 +819,8 @@ export function ConversationalTutor() {
   };
 
   // Function to stop the AI from speaking - enhanced for reliability
-  const stopSpeaking = () => {
+  // Now takes an optional autoMicOn param (default true)
+  const stopSpeaking = (autoMicOn = true) => {
     // Try multiple approaches to ensure speech stops
     try {
       // Method 1: Cancel all speech in the queue
@@ -817,16 +843,8 @@ export function ConversationalTutor() {
         // Fallback to direct cancel already happened above
       }
 
-      // Method 3: If there's a specific utterance, try to abort it directly
+      // Method 3: If there's a specific utterance, just clear the ref (do not manually call onend)
       if (synthesisUtteranceRef.current) {
-        try {
-          // Some browsers support this
-          if (typeof synthesisUtteranceRef.current.onend === "function") {
-            synthesisUtteranceRef.current.onend(new Event("end"));
-          }
-        } catch (e) {
-          console.error("Error trying to manually trigger utterance end:", e);
-        }
         synthesisUtteranceRef.current = null;
       }
     } catch (error) {
@@ -836,6 +854,11 @@ export function ConversationalTutor() {
     // Always update state, even if the above methods fail
     setIsSpeaking(false);
     setCurrentSpeakingMessageId(null);
+
+    // Auto-on mic if requested, session is active, and mic is not already active
+    if (autoMicOn && isSessionActive && micState !== MicState.ACTIVE) {
+      startMicrophone();
+    }
   };
 
   // Toggle voice output
@@ -937,9 +960,15 @@ export function ConversationalTutor() {
       return;
     }
 
+    // Show starting state immediately for instant feedback
+    setIsStartingSession(true);
+    setIsLoading(true);
+
     // First check connection to backend services
     const connectionSuccessful = await checkBackendConnection();
     if (!connectionSuccessful) {
+      setIsStartingSession(false);
+      setIsLoading(false);
       return; // Don't proceed if connection failed
     }
 
@@ -951,11 +980,10 @@ export function ConversationalTutor() {
     } catch (error) {
       console.error("Microphone access error:", error);
       alert(UI_TEXT.deviceError);
+      setIsStartingSession(false);
+      setIsLoading(false);
       return;
     }
-
-    setIsStartingSession(true);
-    setIsLoading(true);
 
     // Record start time for minimum loading time
     const startTime = Date.now();
@@ -1390,7 +1418,9 @@ export function ConversationalTutor() {
               <Button
                 className="w-full py-2 sm:py-3 text-sm sm:text-base"
                 onClick={startSession}
-                disabled={isStartingSession || isLoading || !selectedSubject.trim()}
+                disabled={
+                  isStartingSession || isLoading || !selectedSubject.trim()
+                }
               >
                 {isStartingSession ? (
                   <>{isConnecting ? "Connecting..." : "Starting Session..."}</>
@@ -1405,8 +1435,9 @@ export function ConversationalTutor() {
         // Active session screen
         <div className="flex flex-col lg:flex-row flex-1 gap-4 sm:gap-6 w-full">
           {/* Chat area */}
-          <Card className="relative flex flex-col flex-1 min-h-[65vh] w-full">
-            <CardHeader className="pb-2 sm:pb-3">
+          <Card className="relative flex flex-col flex-1 w-full overflow-hidden">
+            {/* Fixed Header */}
+            <CardHeader className="sticky top-0 z-10 bg-card pb-2 sm:pb-3 border-b shadow-sm">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <CardTitle className="text-xl sm:text-2xl">
@@ -1445,121 +1476,148 @@ export function ConversationalTutor() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex-grow py-0 px-0 h-[60vh] md:h-[65vh] lg:h-[70vh] relative border-y bg-muted/20">
-              <div className="absolute inset-0 overflow-y-auto py-6 sm:py-10 px-2 sm:px-4 bg-background/70 custom-scrollbar chat-pattern">
-                <div className="flex flex-col space-y-3 sm:space-y-4 mb-16 sm:mb-20">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.role === "user"
-                          ? "justify-end"
-                          : "justify-start"
-                      } w-full`}
-                    >
+            {/* Scrollable Chat Section */}
+            <div className="flex-1 min-h-0 relative">
+              <CardContent className="p-0 border-none bg-muted/20">
+                <div
+                  className="overflow-y-auto p-4 bg-background/70 custom-scrollbar chat-pattern"
+                  style={{
+                    height: "50vh", // default for most screens
+                  }}
+                >
+                  <div className="flex flex-col space-y-3 sm:space-y-4">
+                    {messages.map((message) => (
                       <div
-                        className={`max-w-[95%] sm:max-w-[90%] md:max-w-[80%] rounded-lg p-3 sm:p-4 ${
+                        key={message.id}
+                        className={`flex ${
                           message.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : message.role === "system"
-                            ? "bg-muted text-muted-foreground text-xs sm:text-sm"
-                            : "bg-secondary"
-                        }`}
+                            ? "justify-end"
+                            : "justify-start"
+                        } w-full`}
                       >
-                        {message.role === "user" && message.isVoiceInput && (
-                          <div className="flex items-center justify-end text-xs text-primary-foreground/70 m-1 sm:m-2">
-                            <Mic className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                            <span className="ml-1">{UI_TEXT.voiceMessage}</span>
-                          </div>
-                        )}
-
-                        {message.role === "assistant" &&
-                          isSpeaking &&
-                          currentSpeakingMessageId === message.id && (
-                            <div className="flex items-center text-xs text-muted-foreground mb-1">
-                              <Volume2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 animate-pulse" />
-                              {UI_TEXT.speaking}
+                        <div
+                          className={`max-w-[95%] sm:max-w-[90%] md:max-w-[80%] rounded-lg p-3 sm:p-4 ${
+                            message.role === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : message.role === "system"
+                              ? "bg-muted text-muted-foreground text-xs sm:text-sm"
+                              : "bg-secondary"
+                          }`}
+                        >
+                          {message.role === "user" && message.isVoiceInput && (
+                            <div className="flex items-center justify-end text-xs text-primary-foreground/70 m-1 sm:m-2">
+                              <Mic className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                              <span className="ml-1">
+                                {UI_TEXT.voiceMessage}
+                              </span>
                             </div>
                           )}
 
-                        <div className="whitespace-pre-wrap break-words text-xs sm:text-sm md:text-base">
-                          {message.content}
-                        </div>
+                          {message.role === "assistant" &&
+                            isSpeaking &&
+                            currentSpeakingMessageId === message.id && (
+                              <div className="flex items-center text-xs text-muted-foreground mb-1">
+                                <Volume2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 animate-pulse" />
+                                {UI_TEXT.speaking}
+                              </div>
+                            )}
 
-                        {message.role === "assistant" && (
-                          <div className="flex flex-wrap justify-end mt-2 gap-1 sm:gap-2">
-                            {isVoiceEnabled &&
-                              (isSpeaking &&
-                              currentSpeakingMessageId === message.id ? (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  className="h-6 sm:h-7 px-2 sm:px-3 text-xs"
-                                  onClick={stopSpeaking}
-                                  title="Stop speaking"
-                                >
-                                  <Square className="h-3 w-3 mr-1" />
-                                  <span className="hidden sm:inline">
-                                    Stop Speaking
-                                  </span>
-                                  <span className="sm:hidden">Stop</span>
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 sm:h-7 px-2 text-xs"
-                                  onClick={() =>
-                                    speakText(message.content, message.id)
-                                  }
-                                  title={UI_TEXT.speakAgain}
-                                >
-                                  <Play className="h-3 w-3 mr-1" />
-                                  <span className="hidden sm:inline">
-                                    {UI_TEXT.speakAgain}
-                                  </span>
-                                  <span className="sm:hidden">Play</span>
-                                </Button>
-                              ))}
+                          <div className="whitespace-pre-wrap break-words text-sm p-2">
+                            {message.content}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
 
-                  {isLoading && (
-                    <div className="flex justify-start w-full">
-                      <div className="bg-secondary/80 backdrop-blur-sm rounded-lg p-3 max-w-[90%] sm:max-w-[80%] shadow-sm border border-primary/10">
-                        <div className="flex items-center space-x-3">
-                          {/* Elegant thinking animation */}
-                          <div className="flex space-x-1">
-                            <div
-                              className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse"
-                              style={{ animationDelay: "0ms" }}
-                            ></div>
-                            <div
-                              className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse"
-                              style={{ animationDelay: "300ms" }}
-                            ></div>
-                            <div
-                              className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse"
-                              style={{ animationDelay: "600ms" }}
-                            ></div>
-                          </div>
-                          <span className="text-xs sm:text-sm text-muted-foreground">
-                            {UI_TEXT.tutorThinking}
-                          </span>
+                          {message.role === "assistant" && (
+                            <div className="flex flex-wrap justify-end mt-2 gap-1 sm:gap-2">
+                              {isVoiceEnabled &&
+                                (isSpeaking &&
+                                currentSpeakingMessageId === message.id ? (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-6 sm:h-7 px-2 sm:px-3 text-xs"
+                                    onClick={stopSpeaking}
+                                    title="Stop speaking"
+                                  >
+                                    <Square className="h-3 w-3 mr-1" />
+                                    <span className="hidden sm:inline">
+                                      Stop Speaking
+                                    </span>
+                                    <span className="sm:hidden">Stop</span>
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 sm:h-7 px-2 text-xs"
+                                    onClick={() =>
+                                      speakText(message.content, message.id)
+                                    }
+                                    title={UI_TEXT.speakAgain}
+                                  >
+                                    <Play className="h-3 w-3 mr-1" />
+                                    <span className="hidden sm:inline">
+                                      {UI_TEXT.speakAgain}
+                                    </span>
+                                    <span className="sm:hidden">Play</span>
+                                  </Button>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  )}
+                    ))}
 
-                  <div ref={messagesEndRef} />
+                    {isLoading && (
+                      <div className="flex justify-start w-full">
+                        <div className="bg-secondary/80 backdrop-blur-sm rounded-lg p-3 max-w-[90%] sm:max-w-[80%] shadow-sm border border-primary/10">
+                          <div className="flex items-center space-x-3">
+                            {/* Elegant thinking animation */}
+                            <div className="flex space-x-1">
+                              <div
+                                className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse"
+                                style={{ animationDelay: "0ms" }}
+                              ></div>
+                              <div
+                                className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse"
+                                style={{ animationDelay: "300ms" }}
+                              ></div>
+                              <div
+                                className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse"
+                                style={{ animationDelay: "600ms" }}
+                              ></div>
+                            </div>
+                            <span className="text-xs sm:text-sm text-muted-foreground">
+                              {UI_TEXT.tutorThinking}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter className="absolute bottom-0 left-0 right-0 border-t bg-card pt-2 pb-3 px-3 sm:px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+              </CardContent>
+            </div>
+            {/* Fixed Mic Section at Bottom */}
+            <CardFooter className="sticky bottom-0 left-0 right-0 z-10 border-t bg-card pt-2 pb-3 px-3 sm:px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
               <div className="flex w-full flex-col items-center space-y-2">
+                {/* Clear Voice Message Button */}
+                {transcript && transcript.trim().length > 0 && (
+                  <div
+                    className="text-muted-foreground hover:text-destructive cursor-pointer text-xs"
+                    onClick={() => {
+                      cleanupSpeechRecognition();
+                      setMicState(MicState.INACTIVE);
+                      setTranscript("");
+                      setTimeout(() => {
+                        if (isSessionActive) startMicrophone();
+                      }, 100);
+                    }}
+                  >
+                    Clear
+                  </div>
+                )}
                 <Button
                   variant={
                     micState === MicState.ACTIVE

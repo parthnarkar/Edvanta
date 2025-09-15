@@ -73,8 +73,8 @@ export function Login() {
 
   if (showInterestForm && googleUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-3 sm:p-4">
-        <Card className="w-full max-w-xs sm:max-w-lg">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-xs sm:max-w-lg my-20">
           <CardHeader className="text-center px-4 sm:px-6">
             <CardTitle className="text-xl sm:text-2xl">Choose Your Interests</CardTitle>
             <CardDescription className="text-sm sm:text-base">
@@ -120,8 +120,8 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-3 sm:p-4">
-      <Card className="w-full max-w-xs sm:max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-xs sm:max-w-md my-20">
         <CardHeader className="text-center px-4 sm:px-6">
           <div className="flex items-center justify-center mb-3 sm:mb-4">
             <img

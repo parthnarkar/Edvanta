@@ -30,31 +30,18 @@ logoImg.src = LOGO_SRC;
 
 // Unified loading logic hook
 function useUnifiedLoading(location, authLoading) {
-  // To use common loader at mentioned pages
-  const UseLoading = [
-    "/",
-    "/dashboard",
-    // Can add more routes here if needed
-  ];
+  // Only show loading for 3 seconds on initial mount (refresh)
   const LOADING_MINIMUM_TIME = 3000;
-  const [routeLoading, setRouteLoading] = useState(() => {
-    // On initial mount (manual refresh), show loader if route matches
-    return UseLoading.includes(location.pathname);
-  });
+  const [initialLoading, setInitialLoading] = useState(true);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (UseLoading.includes(location.pathname)) {
-      setRouteLoading(true);
-      timerRef.current = setTimeout(() => setRouteLoading(false), LOADING_MINIMUM_TIME);
-      return () => clearTimeout(timerRef.current);
-    } else {
-      setRouteLoading(false);
-    }
+    timerRef.current = setTimeout(() => setInitialLoading(false), LOADING_MINIMUM_TIME);
+    return () => clearTimeout(timerRef.current);
     // eslint-disable-next-line
-  }, [location.pathname]);
+  }, []);
 
-  return authLoading || routeLoading;
+  return authLoading || initialLoading;
 }
 
 // Layout Component for Dashboard Pages
@@ -100,6 +87,7 @@ function ProtectedRoute({ children }) {
 
 
 
+
 function AppRoutes() {
   const location = useLocation();
   const { loading: authLoading } = useAuth();
@@ -122,115 +110,100 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route
-        path="/"
-        element={
-          <PublicLayout>
-            <Home />
-          </PublicLayout>
-        }
-        />
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-1">
+        <Routes>
+          {/* Public Routes */}
+          <Route
+            path="/"
+            element={<Home />}
+          />
+          <Route
+            path="/auth/login"
+            element={<PageTransition><Login /></PageTransition>}
+          />
+          <Route
+            path="/auth/signup"
+            element={<PageTransition><Signup /></PageTransition>}
+          />
 
-      <Route
-        path="/auth/login"
-        element={
-          <PageTransition>
-            <Login />
-          </PageTransition>
-        }
-      />
-      <Route
-        path="/auth/signup"
-        element={
-          <PageTransition>
-            <Signup />
-          </PageTransition>
-        }
-      />
-
-      {/* Protected Dashboard Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Dashboard />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/tools/visual-generator"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <VisualGenerator />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/tools/doubt-solving"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <DoubtSolving />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/tools/quizzes"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Quizzes />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/tools/conversational-tutor"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <ConversationalTutor />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/tools/roadmap"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Roadmap />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/tools/resume-builder"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <ResumeBuilder />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Catch all route - redirect to home */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+          {/* Protected Dashboard Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/visual-generator"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <VisualGenerator />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/doubt-solving"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <DoubtSolving />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/quizzes"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Quizzes />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/conversational-tutor"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ConversationalTutor />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/roadmap"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Roadmap />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/resume-builder"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ResumeBuilder />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Catch all route - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </div>
   );
 }
 

@@ -502,9 +502,12 @@ export function Quizzes() {
 
     return (
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[999] p-2 sm:p-4">
-        <div className="bg-white/90 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl shadow-2xl max-w-xs sm:max-w-2xl lg:max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-          {/* Quiz Header */}
-          <div className="p-4 sm:p-6 border-b border-white/20">
+        <div
+          className="bg-white/90 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl shadow-2xl max-w-xs sm:max-w-2xl lg:max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col"
+          style={{ minHeight: "400px" }}
+        >
+          {/* Quiz Header - fixed at top */}
+          <div className="p-4 sm:p-6 border-b border-white/20 sticky top-0 z-10 bg-white/90 backdrop-blur-md rounded-t-xl sm:rounded-t-2xl">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2">
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 truncate">
@@ -512,8 +515,7 @@ export function Quizzes() {
                   <span className="truncate">{currentQuiz.title}</span>
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Question {currentQuestion + 1} of{" "}
-                  {currentQuiz.quiz_data.questions.length}
+                  Question {currentQuestion + 1} of {currentQuiz.quiz_data.questions.length}
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
@@ -532,8 +534,11 @@ export function Quizzes() {
             <Progress value={progress} className="bg-white/30" />
           </div>
 
-          {/* Question Content */}
-          <div className="p-4 sm:p-6">
+          {/* Question Content - scrollable middle */}
+          <div
+            className="flex-1 overflow-y-auto p-4 sm:p-6"
+            style={{ minHeight: 0 }}
+          >
             <h3 className="text-base sm:text-lg font-medium mb-4 sm:mb-6 break-words">
               {question.question}
             </h3>
@@ -562,33 +567,32 @@ export function Quizzes() {
                 </label>
               ))}
             </div>
+          </div>
 
-            {/* Navigation */}
-            <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={prevQuestion}
-                disabled={currentQuestion === 0}
-                className="text-sm order-2 sm:order-1"
-              >
-                Previous
-              </Button>
-              <Button
-                onClick={nextQuestion}
-                disabled={answers[question.id] === undefined}
-                className="bg-blue-600 hover:bg-blue-700 text-sm order-1 sm:order-2"
-              >
-                {currentQuestion ===
-                currentQuiz.quiz_data.questions.length - 1 ? (
-                  <>
-                    <span className="hidden sm:inline">Submit Quiz</span>
-                    <span className="sm:hidden">Submit</span>
-                  </>
-                ) : (
-                  "Next"
-                )}
-              </Button>
-            </div>
+          {/* Navigation - fixed at bottom */}
+          <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-0 sticky bottom-0 z-10 bg-white/90 backdrop-blur-md border-t border-white/20 p-4 sm:p-6 rounded-b-xl sm:rounded-b-2xl">
+            <Button
+              variant="outline"
+              onClick={prevQuestion}
+              disabled={currentQuestion === 0}
+              className="text-sm order-2 sm:order-1"
+            >
+              Previous
+            </Button>
+            <Button
+              onClick={nextQuestion}
+              disabled={answers[question.id] === undefined}
+              className="bg-blue-600 hover:bg-blue-700 text-sm order-1 sm:order-2"
+            >
+              {currentQuestion === currentQuiz.quiz_data.questions.length - 1 ? (
+                <>
+                  <span className="hidden sm:inline">Submit Quiz</span>
+                  <span className="sm:hidden">Submit</span>
+                </>
+              ) : (
+                "Next"
+              )}
+            </Button>
           </div>
         </div>
       </div>
