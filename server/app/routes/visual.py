@@ -63,6 +63,7 @@ def pdf_url_to_video():
     return jsonify({"error": "'pdf_url' is required"}), 400
   try:
     text = extract_text_from_pdf_url(pdf_url)
+    print(text)
     outfile = generate_video_from_transcript_text(text)
     url = upload_video_to_cloudinary(outfile)
     return jsonify({"url": url})
