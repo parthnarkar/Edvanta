@@ -94,13 +94,216 @@ const recentActivities = [
   }
 ]
 
+// Function to format learning time with points for minutes
+const formatLearningTime = (totalMinutes) => {
+  if (!totalMinutes || totalMinutes === 0) {
+    return "0m";
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes}m`; // Show only minutes if less than 1 hour
+  } else if (minutes === 0) {
+    return `${hours}h`; // Show only hours if no remaining minutes
+  } else {
+    return `${hours}.${minutes}h`; // Show hours with decimal points for minutes
+  }
+};
+
+// Alternative format showing both hours and minutes separately
+const formatLearningTimeDetailed = (totalMinutes) => {
+  if (!totalMinutes || totalMinutes === 0) {
+    return "0m";
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes}m`;
+  } else if (minutes === 0) {
+    return `${hours}h`;
+  } else {
+    return `${hours}h ${minutes}m`;
+  }
+};
+
 export function Dashboard() {
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
 
-  // Roadmaps state management
+  // State management
   const [savedRoadmaps, setSavedRoadmaps] = useState([]);
   const [isLoadingRoadmaps, setIsLoadingRoadmaps] = useState(false);
+
+  // Add quiz history state
+  const [quizHistory, setQuizHistory] = useState([]);
+  const [userStats, setUserStats] = useState({
+    totalLearningHours: 0,
+    quizzesTaken: 0
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+
+  // Session tracking
+  const [sessionStartTime] = useState(Date.now());
+
+  // Quick Actions Carousel State - ADD THESE MISSING VARIABLES
+  const [quickIndex, setQuickIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Mobile detection - ADD THIS
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Quick actions for mobile (first 4 actions) - ADD THIS
+  const mobileQuickActions = quickActions.slice(0, 4);
+
+  // Carousel logic - ADD THIS
+  const quickLength = quickActions.length;
+  const visibleCards = 4;
+  const intervalRef = useRef();
+
+  // Calculate current cards to show - ADD THIS
+  const currentCards = quickActions.slice(quickIndex, quickIndex + visibleCards);
+  const cardsToShow = currentCards.length < visibleCards
+    ? [...currentCards, ...quickActions.slice(0, visibleCards - currentCards.length)]
+    : currentCards;
+
+  // Mobile detection effect - ADD THIS
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia("(max-width: 640px)").matches);
+    };
+
+    checkMobile();
+    const mediaQuery = window.matchMedia("(max-width: 640px)");
+    mediaQuery.addEventListener('change', checkMobile);
+
+    return () => mediaQuery.removeEventListener('change', checkMobile);
+  }, []);
+
+  // Auto-slide logic for carousel - ADD THIS
+  useEffect(() => {
+    if (!isHovered && !isMobile) {
+      intervalRef.current = setInterval(() => {
+        setQuickIndex((prev) => (prev + visibleCards) % quickLength);
+      }, 6000);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [quickLength, isHovered, isMobile]);
+
+  // Manual navigation functions - ADD THESE
+  const handlePrev = () => {
+    setQuickIndex((prev) =>
+      prev - visibleCards < 0
+        ? quickLength - (quickLength % visibleCards || visibleCards)
+        : prev - visibleCards
+    );
+  };
+
+  const handleNext = () => {
+    setQuickIndex((prev) => (prev + visibleCards) % quickLength);
+  };
+
+  // Fetch user data when component mounts or user changes
+  useEffect(() => {
+    if (user?.email) {
+      fetchUserRoadmaps();
+      fetchUserStats();
+      fetchQuizHistory();
+    }
+  }, [user]);
+
+  // Track session time and save on unmount
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (user?.email) {
+        saveSessionTime();
+      }
+    };
+
+    // Save session time when user navigates away or closes tab
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Cleanup function to save session time when component unmounts
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (user?.email) {
+        saveSessionTime();
+      }
+    };
+  }, [user, sessionStartTime]);
+
+  // Function to save session time to backend
+  const saveSessionTime = async () => {
+    if (!user?.email) return;
+
+    try {
+      const sessionEndTime = Date.now();
+      const sessionDuration = Math.round((sessionEndTime - sessionStartTime) / (1000 * 60)); // Convert to minutes
+
+      // Only save if session lasted more than 1 minute to avoid spam
+      if (sessionDuration >= 1) {
+        await fetch(`${backEndURL}/api/user-stats/session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_email: user.email,
+            session_duration: sessionDuration, // in minutes
+            session_date: new Date().toISOString()
+          }),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save session time:', error);
+    }
+  };
+
+  // Function to fetch user statistics from backend
+  const fetchUserStats = async () => {
+    if (!user?.email) return;
+
+    try {
+      setIsLoadingStats(true);
+
+      const response = await fetch(
+        `${backEndURL}/api/user-stats?user_email=${encodeURIComponent(user.email)}`
+      );
+
+      if (response.ok) {
+        const stats = await response.json();
+        setUserStats({
+          totalLearningHours: stats.total_learning_minutes || 0, // Keep as minutes for precise calculation
+          quizzesTaken: stats.quizzes_taken || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Function to fetch quiz history
+  const fetchQuizHistory = async () => {
+    if (!user?.email) return;
+
+    try {
+      const response = await fetch(
+        `${backEndURL}/api/quiz-history?user_email=${encodeURIComponent(user.email)}`
+      );
+
+      if (response.ok) {
+        const history = await response.json();
+        setQuizHistory(history);
+      }
+    } catch (error) {
+      console.error('Error fetching quiz history:', error);
+    }
+  };
 
   // Fetch roadmaps when user changes
   useEffect(() => {
@@ -219,79 +422,102 @@ export function Dashboard() {
     });
   };
 
-  const mobileStats = [
-    { label: 'Quizzes Taken', value: '24', icon: Brain, change: '+3 this week' },
-    { label: 'Learning Hours', value: '47', icon: Clock, change: '+8 this week' },
-    { label: 'Lessons Generated', value: '12', icon: Palette, change: '+2 this week' },
-    { label: 'Roadmap Progress', value: '68%', icon: TrendingUp, change: '+12% this month' }
-  ];
-
-  const laptopStats = [
-    { label: 'Quizzes Taken', value: '24', icon: Brain, change: '+3 this week' },
-    { label: 'Learning Hours', value: '47', icon: Clock, change: '+8 this week' },
-    { label: 'Lessons Generated', value: '12', icon: Palette, change: '+2 this week' },
-    { label: 'Roadmap Progress', value: '68%', icon: TrendingUp, change: '+12% this month' }
-  ];
-
-  // Responsive stats selection
-  const [stats, setStats] = React.useState(mobileStats);
-
-  React.useEffect(() => {
-    // Use window.matchMedia to detect screen size
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const handleResize = () => {
-      setStats(mq.matches ? laptopStats : mobileStats);
-    };
-    handleResize();
-    mq.addEventListener("change", handleResize);
-    return () => mq.removeEventListener("change", handleResize);
-  }, []);
-
-  // Quick Actions Carousel State
-  const [quickIndex, setQuickIndex] = useState(0);
-  const quickLength = quickActions.length;
-  const visibleCards = 4;
-  const intervalRef = useRef();
-  const [isHovered, setIsHovered] = useState(false);
-
-  // Auto-slide logic (stops on hover)
-  useEffect(() => {
-    if (!isHovered) {
-      intervalRef.current = setInterval(() => {
-        setQuickIndex((prev) => (prev + visibleCards) % quickLength);
-      }, 6000); // Increased duration to 6 seconds
+  // Calculate dynamic stats from roadmap data and quiz history
+  const calculateDynamicStats = () => {
+    if (!savedRoadmaps.length && !quizHistory.length) {
+      return {
+        totalRoadmaps: 0,
+        totalSkills: 0,
+        completedSkills: 0,
+        quizzesTaken: 0,
+        learningMinutes: 0, // Changed to minutes for precise display
+        activeWeeks: 0
+      };
     }
-    return () => clearInterval(intervalRef.current);
-  }, [quickLength, isHovered]);
 
-  // Manual navigation
-  const handlePrev = () => {
-    setQuickIndex((prev) =>
-      prev - visibleCards < 0
-        ? quickLength - (quickLength % visibleCards || visibleCards)
-        : prev - visibleCards
+    // Calculate total skills across all roadmaps
+    const totalSkills = savedRoadmaps.reduce((sum, roadmap) =>
+      sum + (roadmap.data?.nodes?.length - 1 || 0), 0
     );
+
+    // Calculate estimated completed skills based on time elapsed
+    const completedSkills = savedRoadmaps.reduce((sum, roadmap) => {
+      const daysSinceStart = Math.floor(
+        (new Date() - new Date(roadmap.dateCreated)) / (1000 * 60 * 60 * 24)
+      );
+      const totalDays = (roadmap.duration || 12) * 7; // weeks to days
+      const progressRatio = Math.min(daysSinceStart / totalDays, 1);
+      const nodesCount = roadmap.data?.nodes?.length - 1 || 0;
+      return sum + Math.floor(nodesCount * progressRatio);
+    }, 0);
+
+    // Calculate active weeks (total duration of all roadmaps)
+    const activeWeeks = savedRoadmaps.reduce((sum, roadmap) =>
+      sum + (roadmap.duration || 0), 0
+    );
+
+    return {
+      totalRoadmaps: savedRoadmaps.length,
+      totalSkills,
+      completedSkills,
+      quizzesTaken: quizHistory.length, // Real count from quiz history
+      learningMinutes: userStats.totalLearningHours, // This is actually minutes from backend
+      activeWeeks
+    };
   };
 
-  const handleNext = () => {
-    setQuickIndex((prev) =>
-      (prev + visibleCards) % quickLength
-    );
-  };
+  // Get calculated stats
+  const dynamicStats = calculateDynamicStats();
 
-  // Slice for visible cards
-  const currentCards = quickActions.slice(quickIndex, quickIndex + visibleCards);
-  // If at end, wrap around
-  const cardsToShow =
-    currentCards.length < visibleCards
-      ? [...currentCards, ...quickActions.slice(0, visibleCards - currentCards.length)]
-      : currentCards;
+  // Create dynamic stats array with formatted learning time
+  const stats = [
+    {
+      label: 'Active Roadmaps',
+      value: dynamicStats.totalRoadmaps,
+      icon: MapPin,
+      change: `${dynamicStats.activeWeeks} weeks total`,
+      color: 'text-blue-600'
+    },
+    {
+      label: 'Skills Learning',
+      value: dynamicStats.totalSkills,
+      icon: Award,
+      change: `${dynamicStats.completedSkills} completed`,
+      color: 'text-green-600'
+    },
+    {
+      label: 'Quizzes Taken',
+      value: dynamicStats.quizzesTaken,
+      icon: Brain,
+      change: quizHistory.length > 0
+        ? `${Math.round(quizHistory.reduce((sum, quiz) => sum + quiz.percentage, 0) / quizHistory.length)}% avg score`
+        : 'No quizzes yet',
+      color: 'text-purple-600'
+    },
+    {
+      label: 'Learning Time',
+      value: formatLearningTime(dynamicStats.learningMinutes), // Use formatted time
+      icon: Clock,
+      change: dynamicStats.learningMinutes > 0
+        ? `${formatLearningTimeDetailed(dynamicStats.learningMinutes)} total study`
+        : 'Start learning today',
+      color: 'text-orange-600'
+    }
+  ];
 
-  // Responsive grid for Quick Actions (mobile view)
-  const isMobile = window.matchMedia("(max-width: 640px)").matches;
-
-  // For mobile: 2 columns x 2 rows grid, icon + title only (show only first 4 actions)
-  const mobileQuickActions = quickActions.slice(0, 4); // Show first 4 actions
+  // Loading skeleton for stats
+  const statsLoadingSkeleton = Array.from({ length: 4 }).map((_, index) => (
+    <Card key={index} className="animate-pulse">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+        <div className="h-4 bg-gray-200 rounded w-20"></div>
+        <div className="h-4 w-4 bg-gray-200 rounded"></div>
+      </CardHeader>
+      <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+        <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
+        <div className="h-3 bg-gray-200 rounded w-24"></div>
+      </CardContent>
+    </Card>
+  ));
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
@@ -314,25 +540,49 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Dynamic Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600 ">
-                {stat.label}
-              </CardTitle>
-              <stat.icon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-              <div className="text-lg sm:text-2xl font-bold text-gray-900">{stat.value}</div>
-              <p className="text-xs text-green-600 flex items-center mt-1">
-                <TrendingUp className="h-2 w-2 sm:h-3 sm:w-3 mr-1 flex-shrink-0" />
-                <span className="truncate">{stat.change}</span>
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {isLoadingRoadmaps || isLoadingStats ? (
+          statsLoadingSkeleton
+        ) : !user ? (
+          // Not signed in - show placeholder stats
+          Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index} className="opacity-50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-gray-400">
+                  {['Roadmaps', 'Skills', 'Quizzes', 'Hours'][index]}
+                </CardTitle>
+                <div className="h-3 w-3 sm:h-4 sm:w-4 bg-gray-300 rounded flex-shrink-0" />
+              </CardHeader>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                <div className="text-lg sm:text-2xl font-bold text-gray-400">--</div>
+                <p className="text-xs text-gray-400 flex items-center mt-1">
+                  <span className="truncate">Sign in to view</span>
+                </p>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          stats.map((stat, index) => (
+            <Card key={index} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">
+                  {stat.label}
+                </CardTitle>
+                <stat.icon className={`h-3 w-3 sm:h-4 sm:w-4 ${stat.color} flex-shrink-0`} />
+              </CardHeader>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                <div className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {stat.value}
+                </div>
+                <p className="text-xs text-green-600 flex items-center mt-1">
+                  <TrendingUp className="h-2 w-2 sm:h-3 sm:w-3 mr-1 flex-shrink-0" />
+                  <span className="truncate">{stat.change}</span>
+                </p>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Quick Actions Carousel */}
