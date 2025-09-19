@@ -1,4 +1,5 @@
 from app import create_app
+from app.config import Config
 
 # Create Flask application
 app = create_app()
@@ -11,4 +12,5 @@ app = app
 if __name__ == "__main__":
     # This block only runs when executing the file directly
     # It won't run on Vercel's serverless environment
-    app.run(debug=True)
+    PORT = Config.PORT
+    app.run(port=PORT, debug=True)

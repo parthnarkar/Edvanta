@@ -30,7 +30,7 @@ class Config:
     DEBUG = ENV == "development"
 
     # Server settings
-    PORT = int(os.getenv("PORT", "5000"))
+    PORT = int(os.getenv("PORT"))
     HOST = os.getenv("HOST", "0.0.0.0")
 
     # Google Cloud / Vertex AI settings

@@ -20,7 +20,6 @@ def create_app() -> Flask:
     - Loads configuration from Config class / environment variables
     - Enables CORS for /api/* endpoints
     - Registers all feature blueprints
-    - Exposes a simple /api/health endpoint
     """
 
     app = Flask(__name__)
@@ -45,7 +44,7 @@ def create_app() -> Flask:
     app.register_blueprint(roadmap_bp)
     app.register_blueprint(resume_bp)
 
-    @app.route("/api/health", methods=["GET"])  # Simple health check
+    @app.route("/", methods=["GET"])  # Simple health check
     def health():  # pragma: no cover - trivial
         return {"status": "ok", "service": "edvanta-backend"}
 
