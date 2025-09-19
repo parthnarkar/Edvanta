@@ -9,7 +9,10 @@ import base64
 import time
 import vertexai
 from vertexai.generative_models import GenerativeModel
-from google.oauth2 import service_account
+try:
+    from google.oauth2 import service_account
+except Exception:
+    service_account = None
 from pymongo import MongoClient
 from bson import ObjectId
 from ..config import Config

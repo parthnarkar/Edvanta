@@ -11,7 +11,10 @@ import uuid
 from datetime import datetime
 import vertexai
 from vertexai.generative_models import GenerativeModel
-from google.oauth2 import service_account
+try:
+    from google.oauth2 import service_account
+except Exception:
+    service_account = None
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from ..config import Config

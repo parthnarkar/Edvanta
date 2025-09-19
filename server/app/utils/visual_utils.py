@@ -29,21 +29,35 @@ import json
 import os
 import re
 import tempfile
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import requests
-from gtts import gTTS
-from PIL import Image, ImageDraw, ImageFont
+try:
+    from gtts import gTTS
+except Exception:  # pragma: no cover - optional
+    gTTS = None
 
-from moviepy import (
-    AudioFileClip,
-    CompositeVideoClip,
-    ImageClip,
-    concatenate_videoclips,
-)
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except Exception:  # pragma: no cover - optional
+    Image = ImageDraw = ImageFont = None
 
-from google import genai
-from google.genai import types as genai_types
+try:
+    from moviepy import (
+        AudioFileClip,
+        CompositeVideoClip,
+        ImageClip,
+        concatenate_videoclips,
+    )
+except Exception:  # pragma: no cover - optional
+    AudioFileClip = CompositeVideoClip = ImageClip = concatenate_videoclips = None
+
+try:
+    from google import genai
+    from google.genai import types as genai_types
+except Exception:  # pragma: no cover - optional
+    genai = None
+    genai_types = None
 from app.config import Config
 
 
@@ -70,7 +84,7 @@ AI_PROMPT = (
 )
 
 
-def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+def _load_font(size: int) -> Any:
     for path in DEFAULT_FONT_PATHS:
         if os.path.exists(path):
             try:
@@ -109,7 +123,7 @@ def _get_project_and_location(for_images: bool = False) -> tuple[str, str]:
     return project, location
 
 
-def _get_genai_text_client() -> genai.Client:
+def _get_genai_text_client() -> Any:
     global _GENAI_TEXT_CLIENT
     if _GENAI_TEXT_CLIENT is None:
         _ensure_google_credentials()
@@ -118,7 +132,7 @@ def _get_genai_text_client() -> genai.Client:
     return _GENAI_TEXT_CLIENT
 
 
-def _get_genai_image_client() -> genai.Client:
+def _get_genai_image_client() -> Any:
     global _GENAI_IMAGE_CLIENT
     if _GENAI_IMAGE_CLIENT is None:
         _ensure_google_credentials()
@@ -129,6 +143,9 @@ def _get_genai_image_client() -> genai.Client:
 
 def generate_content_with_vertex_ai(prompt: str) -> str:
     """Generate content using Gemini via google-genai (returns plain text)."""
+    if genai is None or genai_types is None:
+        # genai SDK not installed in this lightweight deployment
+        raise RuntimeError("Vertex AI SDK not available in this deployment")
     client = _get_genai_text_client()
     model_id = Config.GENAI_TEXT_MODEL
     chat = client.chats.create(
@@ -155,6 +172,7 @@ def _summarize_text_for_video(text: str) -> str:
         if len(result) >= 20:
             return result
     except Exception:
+        # Vertex AI not available; fall back to original text
         pass
     return text
 
@@ -250,7 +268,7 @@ def generate_images_with_vertex_ai(prompts: List[str]) -> List[str]:
 
     return generated_images
 
-def _generate_caption_clips(script: str, idx: int, total_dur: float) -> Tuple[List[ImageClip], List[str]]:
+def _generate_caption_clips(script: str, idx: int, total_dur: float) -> Tuple[List[Any], List[str]]:
     """Create caption overlays as short ImageClips and return (clips, temp_files)."""
     words = script.split()
     chunks = [" ".join(words[i : i + 4]) for i in range(0, len(words), 4)]  # 4-word chunks
@@ -259,7 +277,7 @@ def _generate_caption_clips(script: str, idx: int, total_dur: float) -> Tuple[Li
     dur = max(total_dur / max(1, len(chunks)), 0.1)
     font = _load_font(FONT_SIZE)
 
-    clips: List[ImageClip] = []
+    clips: List[Any] = []
     img_files: List[str] = []
 
     for j, chunk in enumerate(chunks):
@@ -288,7 +306,7 @@ def _generate_caption_clips(script: str, idx: int, total_dur: float) -> Tuple[Li
     return clips, img_files
 
 
-def _create_key_moment_clip(moment: dict, idx: int) -> Tuple[CompositeVideoClip, List[str]]:
+def _create_key_moment_clip(moment: dict, idx: int) -> Tuple[Any, List[str]]:
     """Create a CompositeVideoClip for a single key moment and return (clip, temp_files)."""
     temp_files: List[str] = []
 
@@ -307,7 +325,7 @@ def _create_key_moment_clip(moment: dict, idx: int) -> Tuple[CompositeVideoClip,
         raise RuntimeError("No AI images could be generated")
 
     per_image_duration = total_dur / len(image_paths)
-    image_clips: List[ImageClip] = []
+    image_clips: List[Any] = []
     for image_path in image_paths:
         try:
             img_clip = (
@@ -381,7 +399,7 @@ def generate_video_from_transcript_text(transcript_text: str) -> str:
     
     print(prompts_per_sentence)
 
-    clips: List[CompositeVideoClip] = []
+    clips: List[Any] = []
     temp_files: List[str] = []
     try:
         for idx, sentence in enumerate(sentences):

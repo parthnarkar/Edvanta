@@ -10,11 +10,22 @@ Provides functionality for:
 import json
 import os
 import traceback
-import vertexai
-from vertexai.generative_models import GenerativeModel, Part
-from vertexai.preview.generative_models import GenerationConfig, HarmCategory, HarmBlockThreshold
+try:
+    import vertexai
+    from vertexai.generative_models import GenerativeModel, Part
+    from vertexai.preview.generative_models import GenerationConfig, HarmCategory, HarmBlockThreshold
+except Exception:  # pragma: no cover - optional
+    vertexai = None
+    GenerativeModel = None
+    Part = None
+    GenerationConfig = None
+    HarmCategory = None
+    HarmBlockThreshold = None
 from app.config import Config
-from google.oauth2 import service_account
+try:
+    from google.oauth2 import service_account
+except Exception:  # pragma: no cover - optional dependency
+    service_account = None
 import base64
 from pymongo import MongoClient
 from datetime import datetime
@@ -505,10 +516,12 @@ def init_vertex_ai():
         )
         
         # Initialize Vertex AI
+        if vertexai is None:
+            # SDK not available in this environment
+            return False
         vertexai.init(project=project_id, location=location, credentials=credentials)
         return True
     except Exception as e:
-        
         return False
 
 
@@ -522,13 +535,17 @@ def get_vertex_response(prompt, context=None):
     Returns:
         str: The AI-generated response optimized for voice playback
     """
-    # Initialize Vertex AI if needed
+    # Initialize Vertex AI if available
+    if vertexai is None:
+        return _get_fallback_response(prompt, context, error="Vertex AI SDK not available")
     init_vertex_ai()
 
     # Default model to use - Gemini 2.5 Flash
     model_name = Config.VERTEX_MODEL_NAME
     
     try:
+        if GenerativeModel is None:
+            return _get_fallback_response(prompt, context, error="GenerativeModel not available")
         # Load the model
         model = GenerativeModel(model_name)
         
