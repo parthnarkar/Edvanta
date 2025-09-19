@@ -32,9 +32,11 @@ import {
   Trash2,
 } from "lucide-react";
 import backEndURL from "../../hooks/helper";
+import { useLocation } from "react-router-dom";
 
 export function Quizzes() {
-  const [activeTab, setActiveTab] = useState("browse");
+  const location = useLocation();
+  // Removed duplicate declaration of activeTab
   const [quizzes, setQuizzes] = useState([]);
   const [currentQuiz, setCurrentQuiz] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -45,11 +47,17 @@ export function Quizzes() {
   const [isLoading, setIsLoading] = useState(true);
   const [showQuizModal, setShowQuizModal] = useState(false);
 
-  // Create quiz form state
-  const [newQuizTopic, setNewQuizTopic] = useState("");
+  // Get data passed from Dashboard
+  const roadmapData = location.state;
+
+  // Create quiz form state - initialize with roadmap title if available
+  const [newQuizTopic, setNewQuizTopic] = useState(roadmapData?.quizTopic || "");
   const [difficulty, setDifficulty] = useState("easy");
   const [numberOfQuestions, setNumberOfQuestions] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Set active tab to "create" if coming from roadmap
+  const [activeTab, setActiveTab] = useState(roadmapData?.fromRoadmap ? "create" : "browse");
 
   // Quiz history state
   const [quizHistory, setQuizHistory] = useState([]);
@@ -80,6 +88,14 @@ export function Quizzes() {
       loadQuizzes();
     }
   }, [user?.email, authLoading]);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, []);
 
   // Load history when history tab is active or user changes
   useEffect(() => {
@@ -440,13 +456,12 @@ export function Quizzes() {
                 You scored {results.percentage}% on {currentQuiz.title}
               </p>
               <div
-                className={`text-3xl sm:text-4xl font-bold ${
-                  results.percentage >= 80
-                    ? "text-green-600"
-                    : results.percentage >= 60
+                className={`text-3xl sm:text-4xl font-bold ${results.percentage >= 80
+                  ? "text-green-600"
+                  : results.percentage >= 60
                     ? "text-yellow-600"
                     : "text-red-600"
-                }`}
+                  }`}
               >
                 {results.score}/{results.total}
               </div>
@@ -547,11 +562,10 @@ export function Quizzes() {
               {question.options.map((option, index) => (
                 <label
                   key={index}
-                  className={`flex items-start p-3 sm:p-4 border border-white/20 rounded-lg cursor-pointer transition-all ${
-                    answers[question.id] === option
-                      ? "border-blue-500 bg-blue-50/50 backdrop-blur-sm"
-                      : "hover:bg-white/30 backdrop-blur-sm"
-                  }`}
+                  className={`flex items-start p-3 sm:p-4 border border-white/20 rounded-lg cursor-pointer transition-all ${answers[question.id] === option
+                    ? "border-blue-500 bg-blue-50/50 backdrop-blur-sm"
+                    : "hover:bg-white/30 backdrop-blur-sm"
+                    }`}
                 >
                   <input
                     type="radio"
@@ -599,6 +613,14 @@ export function Quizzes() {
     );
   };
 
+  // Clear the location state after using it to prevent it persisting on refresh
+  useEffect(() => {
+    if (roadmapData?.fromRoadmap) {
+      // Replace the current history entry to remove the state
+      window.history.replaceState(null, '', location.pathname);
+    }
+  }, [roadmapData, location.pathname]);
+
   // Don't render until auth state is determined
   if (authLoading) {
     return (
@@ -626,6 +648,11 @@ export function Quizzes() {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
             Interactive Quizzes
           </h1>
+          {roadmapData?.fromRoadmap && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200 mt-2 sm:mt-0">
+              From Roadmap: {roadmapData.quizTopic}
+            </Badge>
+          )}
         </div>
         <p className="text-sm sm:text-base text-gray-600">
           Test your knowledge with AI-generated quizzes and track your progress.
@@ -734,16 +761,15 @@ export function Quizzes() {
                             quiz.difficulty === "Easy"
                               ? "secondary"
                               : quiz.difficulty === "Medium"
-                              ? "warning"
-                              : "destructive"
+                                ? "warning"
+                                : "destructive"
                           }
-                          className={`text-xs px-2 py-1 font-medium ${
-                            quiz.difficulty === "Easy"
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : quiz.difficulty === "Medium"
+                          className={`text-xs px-2 py-1 font-medium ${quiz.difficulty === "Easy"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : quiz.difficulty === "Medium"
                               ? "bg-yellow-100 text-yellow-700 border-yellow-200"
                               : "bg-red-100 text-red-700 border-red-200"
-                          }`}
+                            }`}
                         >
                           {quiz.difficulty}
                         </Badge>
@@ -822,9 +848,17 @@ export function Quizzes() {
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                 Generate New Quiz
+                {roadmapData?.fromRoadmap && (
+                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 text-xs">
+                    From Roadmap
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription className="text-sm">
-                Create a custom quiz from any topic using AI.
+                {roadmapData?.fromRoadmap
+                  ? `Create a quiz based on your "${roadmapData.quizTopic}" roadmap.`
+                  : "Create a custom quiz from any topic using AI."
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -836,6 +870,12 @@ export function Quizzes() {
                   onChange={(e) => setNewQuizTopic(e.target.value)}
                   className="text-sm sm:text-base"
                 />
+                {roadmapData?.fromRoadmap && (
+                  <p className="text-xs text-blue-600 flex items-center gap-1">
+                    <Brain className="h-3 w-3" />
+                    Topic automatically filled from your roadmap
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -959,11 +999,11 @@ export function Quizzes() {
                       <div className="text-xl sm:text-2xl font-bold text-green-700">
                         {quizHistory.length > 0
                           ? Math.round(
-                              quizHistory.reduce(
-                                (acc, quiz) => acc + quiz.percentage,
-                                0
-                              ) / quizHistory.length
-                            )
+                            quizHistory.reduce(
+                              (acc, quiz) => acc + quiz.percentage,
+                              0
+                            ) / quizHistory.length
+                          )
                           : 0}
                         %
                       </div>
@@ -1002,16 +1042,15 @@ export function Quizzes() {
                                   historyItem.difficulty === "easy"
                                     ? "secondary"
                                     : historyItem.difficulty === "medium"
-                                    ? "warning"
-                                    : "destructive"
+                                      ? "warning"
+                                      : "destructive"
                                 }
-                                className={`text-xs px-2 py-1 font-medium ${
-                                  historyItem.difficulty === "easy"
-                                    ? "bg-green-100 text-green-700 border-green-200"
-                                    : historyItem.difficulty === "medium"
+                                className={`text-xs px-2 py-1 font-medium ${historyItem.difficulty === "easy"
+                                  ? "bg-green-100 text-green-700 border-green-200"
+                                  : historyItem.difficulty === "medium"
                                     ? "bg-yellow-100 text-yellow-700 border-yellow-200"
                                     : "bg-red-100 text-red-700 border-red-200"
-                                }`}
+                                  }`}
                               >
                                 {historyItem.difficulty
                                   .charAt(0)
@@ -1048,13 +1087,12 @@ export function Quizzes() {
                                 Percentage
                               </div>
                               <div
-                                className={`text-sm sm:text-base font-bold ${
-                                  historyItem.percentage >= 80
-                                    ? "text-green-600"
-                                    : historyItem.percentage >= 60
+                                className={`text-sm sm:text-base font-bold ${historyItem.percentage >= 80
+                                  ? "text-green-600"
+                                  : historyItem.percentage >= 60
                                     ? "text-yellow-600"
                                     : "text-red-600"
-                                }`}
+                                  }`}
                               >
                                 {historyItem.percentage}%
                               </div>

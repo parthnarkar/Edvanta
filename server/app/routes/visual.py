@@ -18,7 +18,6 @@ from ..utils.visual_utils import (
   extract_text_from_audio_url,
 )
 from ..utils.cloudinary_utils import upload_video_to_cloudinary
-from app.utils.ai_utils import _get_fallback_response
 
 
 visual_bp = Blueprint("visual", __name__)
@@ -40,10 +39,6 @@ def text_to_video():
     return jsonify({"error": "'text' is required"}), 400
   try:
     outfile = generate_video_from_transcript_text(text)
-    if not outfile:
-      # Return a fallback message when generation not available
-      fallback = _get_fallback_response(text, context={"subject": "visual generation"})
-      return jsonify({"warning": "Video generation not available in this deployment", "message": fallback}), 200
     url = upload_video_to_cloudinary(outfile)
     return jsonify({"url": url})
   except NotImplementedError as nie:
@@ -69,9 +64,6 @@ def pdf_url_to_video():
   try:
     text = extract_text_from_pdf_url(pdf_url)
     outfile = generate_video_from_transcript_text(text)
-    if not outfile:
-      fallback = _get_fallback_response(text, context={"subject": "visual generation"})
-      return jsonify({"warning": "Video generation not available in this deployment", "message": fallback}), 200
     url = upload_video_to_cloudinary(outfile)
     return jsonify({"url": url})
   except Exception as e:
@@ -100,9 +92,6 @@ def audio_url_to_video():
       if not transcript:
         return jsonify({"error": "Transcription produced empty text"}), 422
     outfile = generate_video_from_transcript_text(transcript)
-    if not outfile:
-      fallback = _get_fallback_response(transcript, context={"subject": "visual generation"})
-      return jsonify({"warning": "Video generation not available in this deployment", "message": fallback}), 200
     url = upload_video_to_cloudinary(outfile)
     return jsonify({"url": url})
   except Exception as e:
