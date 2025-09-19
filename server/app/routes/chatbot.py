@@ -10,21 +10,21 @@ import time
 import vertexai
 from vertexai.generative_models import GenerativeModel
 from google.oauth2 import service_account
-from pymongo import MongoClient
 from bson import ObjectId
 from ..config import Config
 from datetime import datetime
+from ..utils.mongo_utils import connect_to_mongodb
 
 chatbot_bp = Blueprint("chatbot", __name__)
 
-# MongoDB connection
+# MongoDB connection via centralized utils
 try:
-    mongo_uri = Config.MONGODB_URI
-    db_name = Config.MONGODB_DB_NAME
-    collection_name = Config.MONGODB_CHAT_COLLECTION
-    client = MongoClient(mongo_uri)
-    db = client[db_name]
-    chat_sessions_col = db[collection_name]
+    client, db, collection_name = connect_to_mongodb(
+        "MONGODB_CHAT_COLLECTION", fallback_collection="chat_sessions"
+    )
+    if not db:
+        raise Exception("MongoDB connection not available")
+    chat_sessions_col = db[collection_name or "chat_sessions"]
 except Exception as e:
     # Fallback to in-memory storage
     chat_sessions_storage = []
