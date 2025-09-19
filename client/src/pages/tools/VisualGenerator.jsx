@@ -29,6 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import backEndURL from "../../hooks/helper";
+import { useEffect } from "react";
 
 const steps = [
   { id: "input", title: "Input Content", icon: FileText, status: "completed" },

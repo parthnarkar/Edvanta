@@ -296,10 +296,10 @@ export function Dashboard() {
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
       {/* Welcome Header */}
-      <div className="bg-primary rounded-xl p-4 sm:p-6 text-white">
+      <div className="bg-[#289da8] rounded-xl p-4 sm:p-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 text-white">
               Welcome back, {userProfile?.name || user?.displayName || 'Learner'}! 👋
             </h1>
             <p className="text-sm sm:text-base text-blue-100">
