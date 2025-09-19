@@ -10,9 +10,10 @@ import requests
 import tempfile
 import json
 import base64
-import vertexai
-from vertexai.generative_models import GenerativeModel
-from google.oauth2 import service_account
+try:
+    from google.oauth2 import service_account
+except Exception:
+    service_account = None
 from ..config import Config
 import re
 
@@ -184,8 +185,14 @@ def analyze_resume():
         except Exception as e:
             return jsonify({"error": f"Failed to fetch or parse resume: {str(e)}"}), 500
 
-    # Vertex AI Gemini setup (same as roadmap.py)
+    # Vertex AI Gemini setup (lazy import)
     try:
+        try:
+            import vertexai
+            from vertexai.generative_models import GenerativeModel
+        except Exception:
+            return jsonify({"error": "AI service unavailable in this deployment"}), 503
+
         project_id = Config.GOOGLE_CLOUD_PROJECT
         location = Config.GOOGLE_CLOUD_LOCATION
         credentials_base64 = Config.VERTEX_DEFAULT_CREDENTIALS

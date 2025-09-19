@@ -5,8 +5,6 @@ import json
 import os
 import base64
 import tempfile
-import vertexai
-from vertexai.generative_models import GenerativeModel
 try:
     from google.oauth2 import service_account
 except Exception:
@@ -24,6 +22,13 @@ def create_quiz(topic: str, difficulty: str = "medium", num_questions: int = 10)
     # Try AI generation first
     try:
         print("🤖 Attempting AI generation...")
+
+        # Lazy import Vertex SDK
+        try:
+            import vertexai
+            from vertexai.generative_models import GenerativeModel
+        except Exception:
+            raise RuntimeError("Vertex SDK not available")
 
         # Set up credentials
         project_id = Config.GOOGLE_CLOUD_PROJECT

@@ -49,4 +49,30 @@ def create_app() -> Flask:
     def health():  # pragma: no cover - trivial
         return {"status": "ok", "service": "edvanta-backend"}
 
+    @app.route("/api/runtime-features", methods=["GET"])
+    def runtime_features():
+        """Report which optional libraries are available at runtime."""
+        features = {}
+        try:
+            import importlib
+
+            optional_libs = [
+                "vertexai",
+                "google.genai",
+                "moviepy",
+                "gtts",
+                "PIL",
+                "whisper",
+                "PyPDF2",
+            ]
+            for lib in optional_libs:
+                try:
+                    features[lib] = importlib.util.find_spec(lib) is not None
+                except Exception:
+                    features[lib] = False
+        except Exception:
+            features = {"error": "runtime check failed"}
+
+        return {"status": "ok", "features": features}
+
     return app

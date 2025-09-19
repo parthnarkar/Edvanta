@@ -9,8 +9,6 @@ import json
 import base64
 import uuid
 from datetime import datetime
-import vertexai
-from vertexai.generative_models import GenerativeModel
 try:
     from google.oauth2 import service_account
 except Exception:
@@ -82,6 +80,13 @@ def generate_roadmap():
 
     # Vertex AI Gemini setup (same as chatbot.py)
     try:
+        # Lazy import of Vertex SDK; return an error if unavailable
+        try:
+            import vertexai
+            from vertexai.generative_models import GenerativeModel
+        except Exception:
+            return jsonify({"error": "AI service unavailable in this deployment"}), 503
+
         project_id = Config.GOOGLE_CLOUD_PROJECT
         location = Config.GOOGLE_CLOUD_LOCATION
         credentials_base64 = Config.VERTEX_DEFAULT_CREDENTIALS
