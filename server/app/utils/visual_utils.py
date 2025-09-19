@@ -108,7 +108,8 @@ def _ensure_google_credentials() -> None:
     try:
         with open(key_file_path, "w") as f:
             f.write(base64.b64decode(credentials_base64).decode("utf-8"))
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_file_path
+        
+        key_file_path = Config.VERTEX_DEFAULT_CREDENTIALS
     except Exception:
         pass
 
