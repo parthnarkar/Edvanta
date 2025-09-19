@@ -27,40 +27,15 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     service_account = None
 import base64
-from pymongo import MongoClient
+from app.utils.mongo_utils import get_db_connection
 from datetime import datetime
 
 
 # Initialize MongoDB connection
 def get_db_connection():
-    """Get MongoDB connection and return the database object."""
-    try:
-        # Log the connection string (without password) for debugging
-        connection_string = Config.MONGODB_URI
-        if connection_string:
-            # Mask the password in the log for security
-            masked_uri = connection_string.replace("://", "://***:***@")
-            
-        else:
-            return None
-
-        if not Config.MONGODB_DB_NAME:
-            return None
-            
-            
-        # Attempt to connect with a timeout
-        client = MongoClient(Config.MONGODB_URI, serverSelectionTimeoutMS=5000)
-        # Force a connection to verify it works
-        client.server_info()
-        
-        db = client[Config.MONGODB_DB_NAME]
-        # Verify we can access the database
-        collections = db.list_collection_names()
-        
-        
-        return db
-    except Exception as e:
-        return None
+    # Backward-compatible wrapper now provided by mongo_utils
+    from app.utils.mongo_utils import get_db_connection as _get_db
+    return _get_db()
 
 # Voice chat history functions
 def save_chat_message(user_email, message, is_ai=False, context=None):

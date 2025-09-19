@@ -11,43 +11,17 @@ import uuid
 from datetime import datetime
 import vertexai
 from vertexai.generative_models import GenerativeModel
-try:
-    from google.oauth2 import service_account
-except Exception:
-    service_account = None
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from google.oauth2 import service_account
+from app.utils.mongo_utils import connect_to_mongodb
 from ..config import Config
 
 roadmap_bp = Blueprint("roadmap", __name__)
 
-# Function to establish MongoDB connection
-
-
-def connect_to_mongodb():
-    try:
-        connection_string = Config.MONGODB_URI
-        db_name = Config.MONGODB_DB_NAME
-        dynamic_collection = Config.MONGODB_ROADMAP_COLLECTION
-
-        if not connection_string or not db_name:
-            return None, None, None
-
-        # Attempt to connect with a timeout
-        client = MongoClient(connection_string)
-        # Test the connection
-        client.admin.command('ping')
-
-        db = client[db_name]
-        collection_name = dynamic_collection
-
-        return client, db, collection_name
-    except Exception as e:
-        return None, None, None
-
-
 # MongoDB setup
-client, db, collection_name = connect_to_mongodb()
+client, db, collection_name = connect_to_mongodb(
+    collection_config_attr="MONGODB_ROADMAP_COLLECTION",
+    fallback_collection="roadmaps",
+)
 
 
 @roadmap_bp.route("/api/roadmap/generate", methods=["POST"])
@@ -64,7 +38,10 @@ def generate_roadmap():
     # Check if MongoDB is available
     global client, db, collection_name
     if db is None:
-        client, db, collection_name = connect_to_mongodb()
+        client, db, collection_name = connect_to_mongodb(
+            collection_config_attr="MONGODB_ROADMAP_COLLECTION",
+            fallback_collection="roadmaps",
+        )
         if db is None:
             return jsonify({"error": "Database connection is not available"}), 503
 
@@ -153,7 +130,10 @@ def get_user_roadmaps():
     # Check if MongoDB is available
     global client, db, collection_name
     if db is None:
-        client, db, collection_name = connect_to_mongodb()
+        client, db, collection_name = connect_to_mongodb(
+            collection_config_attr="MONGODB_ROADMAP_COLLECTION",
+            fallback_collection="roadmaps",
+        )
         if db is None:
             return jsonify({"error": "Database connection is not available"}), 503
 
@@ -191,7 +171,10 @@ def get_roadmap_by_id(roadmap_id):
     # Check if MongoDB is available
     global client, db, collection_name
     if db is None:
-        client, db, collection_name = connect_to_mongodb()
+        client, db, collection_name = connect_to_mongodb(
+            collection_config_attr="MONGODB_ROADMAP_COLLECTION",
+            fallback_collection="roadmaps",
+        )
         if db is None:
             return jsonify({"error": "Database connection is not available"}), 503
 
