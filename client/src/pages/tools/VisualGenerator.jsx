@@ -61,6 +61,14 @@ export function VisualGenerator() {
   // const [pdfUrl, setPdfUrl] = useState("");
   // const [audioUrl, setAudioUrl] = useState("");
 
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, []);
+
   const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
   async function postJSON(path, body) {
@@ -88,10 +96,10 @@ export function VisualGenerator() {
     const resourceType = file.type.startsWith("audio")
       ? "video"
       : file.type.startsWith("video")
-      ? "video"
-      : file.type === "application/pdf"
-      ? "raw"
-      : "image";
+        ? "video"
+        : file.type === "application/pdf"
+          ? "raw"
+          : "image";
     const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
     const res = await fetch(endpoint, { method: "POST", body: form });
     const data = await res.json();
@@ -212,16 +220,14 @@ export function VisualGenerator() {
             {steps.map((step, index) => (
               <div
                 key={step.id}
-                className={`flex items-center ${
-                  index < steps.length - 1 ? "flex-1" : ""
-                }`}
+                className={`flex items-center ${index < steps.length - 1 ? "flex-1" : ""
+                  }`}
               >
                 <div
-                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full ${
-                    index <= currentStep
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
+                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full ${index <= currentStep
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-500"
+                    }`}
                 >
                   {index < currentStep ? (
                     <CheckCircle className="h-3 w-3 sm:h-5 sm:w-5" />
@@ -233,9 +239,8 @@ export function VisualGenerator() {
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`flex-1 h-1 mx-2 sm:mx-4 ${
-                      index < currentStep ? "bg-blue-600" : "bg-gray-200"
-                    }`}
+                    className={`flex-1 h-1 mx-2 sm:mx-4 ${index < currentStep ? "bg-blue-600" : "bg-gray-200"
+                      }`}
                   />
                 )}
               </div>

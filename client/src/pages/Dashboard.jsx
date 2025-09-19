@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { useAuth } from '../hooks/useAuth'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import backEndURL from '../hooks/helper'  // Import the backend URL helper
 import {
   Brain,
@@ -96,6 +96,7 @@ const recentActivities = [
 
 export function Dashboard() {
   const { user, userProfile } = useAuth();
+  const navigate = useNavigate();
 
   // Roadmaps state management
   const [savedRoadmaps, setSavedRoadmaps] = useState([]);
@@ -107,6 +108,14 @@ export function Dashboard() {
       fetchUserRoadmaps();
     }
   }, [user]);
+
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, []);
 
   // Function to fetch user's roadmaps from the database - USING THE REAL API
   const fetchUserRoadmaps = async () => {
@@ -197,6 +206,17 @@ export function Dashboard() {
       // Fallback to using the roadmap data we already have
       console.log('Using existing roadmap data:', roadmap);
     }
+  };
+
+  // Function to handle Take Quiz with roadmap context
+  const handleTakeQuizWithRoadmap = (latestRoadmap) => {
+    // Navigate to quizzes page with the roadmap title as state
+    navigate('/tools/quizzes', {
+      state: {
+        quizTopic: latestRoadmap.title,
+        fromRoadmap: true
+      }
+    });
   };
 
   const mobileStats = [
@@ -517,14 +537,6 @@ export function Dashboard() {
                             <ArrowRight className="h-4 w-4 ml-2" />
                           </Link>
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => viewRoadmapDetails(latestRoadmap)}
-                          className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                        >
-                          View Details
-                        </Button>
                       </div>
                     </div>
 
@@ -577,8 +589,13 @@ export function Dashboard() {
                       </div>
 
                       <div className="flex gap-2 mt-3">
-                        <Button size="sm" variant="outline" asChild className="flex-1 text-xs border-amber-200 text-amber-700 hover:bg-amber-50">
-                          <Link to="/tools/quizzes">Take Quiz</Link>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleTakeQuizWithRoadmap(latestRoadmap)}
+                          className="flex-1 text-xs border-amber-200 text-amber-700 hover:bg-amber-50 cursor-pointer"
+                        >
+                          Take Quiz
                         </Button>
                         <Button size="sm" variant="outline" asChild className="flex-1 text-xs border-amber-200 text-amber-700 hover:bg-amber-50">
                           <Link to="/tools/visual-generator">Create Visuals</Link>
