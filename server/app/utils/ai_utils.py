@@ -10,17 +10,12 @@ Provides functionality for:
 import json
 import os
 import traceback
-try:
-    import vertexai
-    from vertexai.generative_models import GenerativeModel, Part
-    from vertexai.preview.generative_models import GenerationConfig, HarmCategory, HarmBlockThreshold
-except Exception:  # pragma: no cover - optional
-    vertexai = None
-    GenerativeModel = None
-    Part = None
-    GenerationConfig = None
-    HarmCategory = None
-    HarmBlockThreshold = None
+vertexai = None
+GenerativeModel = None
+Part = None
+GenerationConfig = None
+HarmCategory = None
+HarmBlockThreshold = None
 from app.config import Config
 try:
     from google.oauth2 import service_account
@@ -505,6 +500,14 @@ I'm here to help with your {subject} questions when the service is working prope
 def init_vertex_ai():
     """Initialize the Vertex AI client."""
     try:
+        # Lazy import Vertex SDK and relevant classes
+        try:
+            import vertexai
+            from vertexai.generative_models import GenerativeModel, Part
+            from vertexai.preview.generative_models import GenerationConfig, HarmCategory, HarmBlockThreshold
+        except Exception:
+            return False
+
         # Get credentials from environment or config
         project_id = Config.GOOGLE_CLOUD_PROJECT
         location = Config.GOOGLE_CLOUD_LOCATION
@@ -514,14 +517,10 @@ def init_vertex_ai():
         credentials = service_account.Credentials.from_service_account_info(
             json.loads(base64.b64decode(credentials_base64))
         )
-        
-        # Initialize Vertex AI
-        if vertexai is None:
-            # SDK not available in this environment
-            return False
+
         vertexai.init(project=project_id, location=location, credentials=credentials)
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -535,18 +534,16 @@ def get_vertex_response(prompt, context=None):
     Returns:
         str: The AI-generated response optimized for voice playback
     """
-    # Initialize Vertex AI if available
-    if vertexai is None:
+    # Try to lazy-initialize Vertex AI
+    if not init_vertex_ai():
         return _get_fallback_response(prompt, context, error="Vertex AI SDK not available")
-    init_vertex_ai()
 
     # Default model to use - Gemini 2.5 Flash
     model_name = Config.VERTEX_MODEL_NAME
-    
     try:
-        if GenerativeModel is None:
-            return _get_fallback_response(prompt, context, error="GenerativeModel not available")
-        # Load the model
+        from vertexai.generative_models import GenerativeModel
+        from vertexai.preview.generative_models import GenerationConfig, HarmCategory, HarmBlockThreshold
+
         model = GenerativeModel(model_name)
         
         # Check if this is a voice interaction
@@ -575,20 +572,18 @@ def get_vertex_response(prompt, context=None):
         else:
             full_prompt = [system_instruction, prompt]
         
-        # Configure safety settings
+        # Configure safety settings and generation config
         safety_settings = {
             HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
             HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
             HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
             HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
         }
-        
-        # Configure generation parameters - adapt for voice interactions
+
         generation_config = GenerationConfig(
             temperature=0.7,
             top_p=0.95,
             top_k=40,
-            # Shorter responses for voice, longer for text
             max_output_tokens=600 if is_voice_input else 1024,
         )
         
@@ -709,39 +704,31 @@ def _build_system_instruction(context):
 def summarize_text(text: str):
     """Return structured summary of input text using Vertex AI."""
     # Initialize Vertex AI
-    init_vertex_ai()
-    
+    if not init_vertex_ai():
+        raise RuntimeError("Vertex SDK not available")
+
     try:
-        # Load the model
+        from vertexai.generative_models import GenerativeModel
         model = GenerativeModel("gemini-pro")
-        
-        # Create the prompt for summarization
         prompt = f"Please summarize the following text concisely, highlighting the key points:\n\n{text}"
-        
-        # Generate the summary
         response = model.generate_content(prompt)
-        
         return response.text
-    except Exception as e:
-        
+    except Exception:
         raise
 
 
 def generate_images(prompts):
     """Generate images based on prompts using Vertex AI's image generation capabilities."""
     # Initialize Vertex AI
-    init_vertex_ai()
-    
+    if not init_vertex_ai():
+        raise RuntimeError("Vertex SDK not available")
+
     try:
-        # Load the image generation model
+        from vertexai.generative_models import GenerativeModel
         model = GenerativeModel("imagegeneration@002")
-        
         results = []
         for prompt in prompts:
-            # Generate the image
             response = model.generate_content(prompt)
-            
-            # Extract the image data
             if response.parts:
                 for part in response.parts:
                     if hasattr(part, 'inline_data') and part.inline_data.mime_type.startswith('image/'):
@@ -750,8 +737,6 @@ def generate_images(prompts):
                             'mime_type': part.inline_data.mime_type,
                             'data': part.inline_data.data
                         })
-        
         return results
-    except Exception as e:
-        
+    except Exception:
         raise

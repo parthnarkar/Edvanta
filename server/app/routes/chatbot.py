@@ -7,8 +7,6 @@ from flask import Blueprint, request, jsonify
 import json
 import base64
 import time
-import vertexai
-from vertexai.generative_models import GenerativeModel
 try:
     from google.oauth2 import service_account
 except Exception:
@@ -60,6 +58,13 @@ def fix_id(document):
 def get_ai_response(question: str, context: str = "", chat_history: list = None):
     """Generate AI response for doubt solving with conversation context."""
     try:
+        # Try to import Vertex SDK lazily; return None if unavailable
+        try:
+            import vertexai
+            from vertexai.generative_models import GenerativeModel
+        except Exception:
+            return None
+
         # Set up credentials
         project_id = Config.GOOGLE_CLOUD_PROJECT
         location = Config.GOOGLE_CLOUD_LOCATION
