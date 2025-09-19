@@ -16,6 +16,7 @@ except Exception:
     service_account = None
 from ..config import Config
 import re
+from app.utils.ai_utils import _get_fallback_response
 
 resume_bp = Blueprint("resume", __name__)
 
@@ -191,7 +192,9 @@ def analyze_resume():
             import vertexai
             from vertexai.generative_models import GenerativeModel
         except Exception:
-            return jsonify({"error": "AI service unavailable in this deployment"}), 503
+            # Return a helpful fallback analysis when AI is not available
+            fallback_text = _get_fallback_response(job_description or "resume analysis", context={"subject": "resume"})
+            return jsonify({"analysis": {"strengths": [], "improvements": [], "match_score": 0, "summary": fallback_text}, "note": "AI service unavailable; returned fallback message."}), 200
 
         project_id = Config.GOOGLE_CLOUD_PROJECT
         location = Config.GOOGLE_CLOUD_LOCATION

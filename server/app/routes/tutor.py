@@ -311,19 +311,7 @@ def check_active_session():
 
     try:
 
-        # Check MongoDB connection first
-        from app.utils.ai_utils import get_db_connection
-        db = get_db_connection()
-        if db is None:
-
-            return jsonify({
-                "success": False,
-                "error": "Database connection error",
-                "has_active_session": False,
-                "timestamp": datetime.utcnow().isoformat()
-            }), 500
-
-        # Check if the user has an active session
+        # Check if the user has an active session (uses in-memory fallback when DB is unavailable)
         active_session = get_active_session(user_email)
 
         if active_session:

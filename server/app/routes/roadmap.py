@@ -15,6 +15,7 @@ except Exception:
     service_account = None
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from app.utils.ai_utils import _get_fallback_response
 from ..config import Config
 
 roadmap_bp = Blueprint("roadmap", __name__)
@@ -47,6 +48,9 @@ def connect_to_mongodb():
 # MongoDB setup
 client, db, collection_name = connect_to_mongodb()
 
+# In-memory fallback store for roadmaps when MongoDB is not configured
+_in_memory_roadmaps = {}
+
 
 @roadmap_bp.route("/api/roadmap/generate", methods=["POST"])
 def generate_roadmap():
@@ -59,12 +63,10 @@ def generate_roadmap():
       3. Store the generated roadmap in MongoDB
       4. Return the roadmap data
     """
-    # Check if MongoDB is available
+    # Check if MongoDB is available (if not, use in-memory fallback)
     global client, db, collection_name
     if db is None:
         client, db, collection_name = connect_to_mongodb()
-        if db is None:
-            return jsonify({"error": "Database connection is not available"}), 503
 
     data = request.get_json()
     goal = data.get("goal")
@@ -80,12 +82,26 @@ def generate_roadmap():
 
     # Vertex AI Gemini setup (same as chatbot.py)
     try:
-        # Lazy import of Vertex SDK; return an error if unavailable
+        # Lazy import of Vertex SDK; return a friendly fallback if unavailable
         try:
             import vertexai
             from vertexai.generative_models import GenerativeModel
         except Exception:
-            return jsonify({"error": "AI service unavailable in this deployment"}), 503
+            # Return a helpful fallback roadmap structure
+            fallback = {
+                "nodes": [
+                    {"id": "start", "title": f"Start: {goal}", "description": background, "recommended_weeks": 1, "resources": []},
+                    {"id": "fundamentals", "title": "Fundamentals", "description": "Core concepts and basics.", "recommended_weeks": 2, "resources": []},
+                    {"id": "project", "title": "Project Work", "description": "Build a project to apply learning.", "recommended_weeks": 2, "resources": []},
+                    {"id": "goal", "title": f"Achieve: {goal}", "description": "Target goal milestone.", "recommended_weeks": 1, "resources": []}
+                ],
+                "edges": [
+                    {"from": "start", "to": "fundamentals"},
+                    {"from": "fundamentals", "to": "project"},
+                    {"from": "project", "to": "goal"}
+                ]
+            }
+            return jsonify({"roadmap": fallback, "note": "AI service not available; returned a basic fallback roadmap."}), 200
 
         project_id = Config.GOOGLE_CLOUD_PROJECT
         location = Config.GOOGLE_CLOUD_LOCATION
@@ -167,21 +183,26 @@ def get_user_roadmaps():
         return jsonify({"error": "Missing user_email parameter"}), 400
 
     try:
-        # Get roadmaps from MongoDB
-        roadmap_collection = db[collection_name]
+        # If DB is available, read from MongoDB
+        if db:
+            roadmap_collection = db[collection_name]
 
-        # Find all roadmaps for this user, sorted by creation date (newest first)
-        roadmaps_cursor = roadmap_collection.find(
-            {"user_email": user_email}).sort("created_at", -1)
+            # Find all roadmaps for this user, sorted by creation date (newest first)
+            roadmaps_cursor = roadmap_collection.find(
+                {"user_email": user_email}).sort("created_at", -1)
 
-        # Convert to list and serialize ObjectId
-        roadmaps = []
-        for roadmap in roadmaps_cursor:
-            # Convert ObjectId to string for JSON serialization
-            roadmap["_id"] = str(roadmap["_id"])
-            roadmaps.append(roadmap)
+            # Convert to list and serialize ObjectId
+            roadmaps = []
+            for roadmap in roadmaps_cursor:
+                # Convert ObjectId to string for JSON serialization
+                roadmap["_id"] = str(roadmap["_id"])
+                roadmaps.append(roadmap)
 
-        return jsonify(roadmaps)
+            return jsonify(roadmaps)
+
+        # Fall back to in-memory store
+        user_roadmaps = [r for r in _in_memory_roadmaps.values() if r.get("user_email") == user_email]
+        return jsonify(user_roadmaps)
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve roadmaps: {str(e)}"}), 500
 
@@ -193,12 +214,10 @@ def get_roadmap_by_id(roadmap_id):
     Query params:
     - user_email: The email of the user requesting the roadmap
     """
-    # Check if MongoDB is available
+    # Check if MongoDB is available (use in-memory fallback if not)
     global client, db, collection_name
     if db is None:
         client, db, collection_name = connect_to_mongodb()
-        if db is None:
-            return jsonify({"error": "Database connection is not available"}), 503
 
     if not roadmap_id:
         return jsonify({"error": "Missing roadmap_id parameter"}), 400
@@ -208,30 +227,47 @@ def get_roadmap_by_id(roadmap_id):
         return jsonify({"error": "Missing user_email parameter"}), 400
 
     try:
-        # Get roadmap from MongoDB
-        roadmap_collection = db[collection_name]
+        # If DB is available, operate against MongoDB
+        if db:
+            roadmap_collection = db[collection_name]
 
-        # Check if roadmap exists and verify ownership
-        roadmap = roadmap_collection.find_one(
-            {"id": roadmap_id, "user_email": user_email})
-
-        if not roadmap:
-            return jsonify({"error": "Roadmap not found or access denied"}), 404
-
-        # For DELETE method, delete the roadmap
-        if request.method == "DELETE":
-            result = roadmap_collection.delete_one(
+            # Check if roadmap exists and verify ownership
+            roadmap = roadmap_collection.find_one(
                 {"id": roadmap_id, "user_email": user_email})
 
-            if result.deleted_count > 0:
-                return jsonify({"success": True, "message": "Roadmap deleted successfully"}), 200
-            else:
-                return jsonify({"error": "Failed to delete roadmap"}), 500
+            if not roadmap:
+                return jsonify({"error": "Roadmap not found or access denied"}), 404
 
-        # For GET method, return the roadmap
-        # Convert ObjectId to string for JSON serialization
-        roadmap["_id"] = str(roadmap["_id"])
-        return jsonify(roadmap)
+            # For DELETE method, delete the roadmap
+            if request.method == "DELETE":
+                result = roadmap_collection.delete_one(
+                    {"id": roadmap_id, "user_email": user_email})
+
+                if result.deleted_count > 0:
+                    return jsonify({"success": True, "message": "Roadmap deleted successfully"}), 200
+                else:
+                    return jsonify({"error": "Failed to delete roadmap"}), 500
+
+            # For GET method, return the roadmap
+            # Convert ObjectId to string for JSON serialization
+            roadmap["_id"] = str(roadmap["_id"])
+            return jsonify(roadmap)
+
+        # Fall back to in-memory store
+        r = None
+        for rid, roadmap in _in_memory_roadmaps.items():
+            if roadmap.get("id") == roadmap_id and roadmap.get("user_email") == user_email:
+                r = roadmap
+                break
+
+        if not r:
+            return jsonify({"error": "Roadmap not found or access denied"}), 404
+
+        if request.method == "DELETE":
+            _in_memory_roadmaps.pop(r.get("id"), None)
+            return jsonify({"success": True, "message": "Roadmap deleted successfully"}), 200
+
+        return jsonify(r)
 
     except Exception as e:
         return jsonify({"error": f"Operation failed: {str(e)}"}), 500

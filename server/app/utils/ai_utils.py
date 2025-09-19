@@ -25,6 +25,10 @@ import base64
 from pymongo import MongoClient
 from datetime import datetime
 
+# In-memory fallbacks when MongoDB is not available (keeps runtime state per instance)
+_voice_chat_store = {}
+_active_sessions_store = {}
+
 
 # Initialize MongoDB connection
 def get_db_connection():
@@ -72,44 +76,62 @@ def save_chat_message(user_email, message, is_ai=False, context=None):
     """
     try:
         db = get_db_connection()
-        if db is None:
-            return False
-            
-        # Get the voice_chat collection
-        voice_chat_collection = db[Config.MONGODB_VOICE_CHAT_COLLECTION]
-        
         # Prepare the new message with additional metadata
         new_message = {
             "content": message,
             "is_ai": is_ai,
             "timestamp": datetime.utcnow().isoformat()
         }
-        
+
         # Get session ID from context if available
         session_id = None
         if context and "session_id" in context:
             session_id = context["session_id"]
-            
+
         # Add context metadata if provided
         if context:
-            # Store relevant context with the message
             message_context = {}
-            
-            # Include key metadata but keep it lightweight
             for key in ["session_id", "mode", "subject", "is_voice_input"]:
                 if key in context:
                     message_context[key] = context[key]
-                    
             if message_context:
                 new_message["context"] = message_context
-        
+
         # If no session ID, use a default
         if not session_id:
             session_id = "default_session"
-        
+
+        if db is None:
+            # Use in-memory fallback
+            user_doc = _voice_chat_store.get(user_email)
+
+            if not user_doc:
+                _voice_chat_store[user_email] = {
+                    "sessions": [{"session_id": session_id, "messages": [new_message], "created_at": datetime.utcnow().isoformat()}],
+                    "created_at": datetime.utcnow().isoformat(),
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                return True
+
+            # Find session
+            for s in user_doc.get("sessions", []):
+                if s.get("session_id") == session_id:
+                    s.setdefault("messages", []).append(new_message)
+                    user_doc["updated_at"] = datetime.utcnow().isoformat()
+                    return True
+
+            # Create new session
+            new_session = {"session_id": session_id, "messages": [new_message], "created_at": datetime.utcnow().isoformat()}
+            user_doc.setdefault("sessions", []).append(new_session)
+            user_doc["updated_at"] = datetime.utcnow().isoformat()
+            return True
+
+        # Get the voice_chat collection
+        voice_chat_collection = db[Config.MONGODB_VOICE_CHAT_COLLECTION]
+
         # Find user's chat history document
         chat_doc = voice_chat_collection.find_one({"user_email": user_email})
-        
+
         if chat_doc:
             # Check if session exists in the sessions array
             session_exists = False
@@ -118,7 +140,7 @@ def save_chat_message(user_email, message, is_ai=False, context=None):
                     if session["session_id"] == session_id:
                         session_exists = True
                         break
-            
+
             if session_exists:
                 # Add message to existing session
                 voice_chat_collection.update_one(
@@ -155,10 +177,9 @@ def save_chat_message(user_email, message, is_ai=False, context=None):
                 "created_at": datetime.utcnow().isoformat(),
                 "updated_at": datetime.utcnow().isoformat()
             })
-            
+
         return True
-    except Exception as e:
-        
+    except Exception:
         return False
 
 def get_chat_history(user_email, limit=10, session_id=None):
@@ -175,17 +196,33 @@ def get_chat_history(user_email, limit=10, session_id=None):
     try:
         db = get_db_connection()
         if db is None:
-            return []
-            
+            # Return in-memory history
+            user_doc = _voice_chat_store.get(user_email)
+            if not user_doc:
+                return []
+            sessions = user_doc.get("sessions", [])
+            if session_id:
+                for s in sessions:
+                    if s.get("session_id") == session_id:
+                        msgs = s.get("messages", [])
+                        return msgs[-limit:] if len(msgs) > limit else msgs
+                return []
+            # most recent session
+            if not sessions:
+                return []
+            sorted_sessions = sorted(sessions, key=lambda x: x.get("created_at", ""), reverse=True)
+            msgs = sorted_sessions[0].get("messages", [])
+            return msgs[-limit:] if len(msgs) > limit else msgs
+
         # Get the voice_chat collection
         voice_chat_collection = db[Config.MONGODB_VOICE_CHAT_COLLECTION]
-        
+
         # Find user's chat history
         chat_doc = voice_chat_collection.find_one({"user_email": user_email})
-        
+
         if not chat_doc or "sessions" not in chat_doc or not chat_doc["sessions"]:
             return []
-        
+
         # If session_id is provided, get messages from that session
         if session_id:
             for session in chat_doc["sessions"]:
@@ -203,10 +240,9 @@ def get_chat_history(user_email, limit=10, session_id=None):
             if sorted_sessions and "messages" in sorted_sessions[0]:
                 messages = sorted_sessions[0]["messages"]
                 return messages[-limit:] if len(messages) > limit else messages
-        
+
         return []
-    except Exception as e:
-        
+    except Exception:
         return []
 
 
@@ -223,11 +259,23 @@ def clear_chat_history(user_email, session_id=None):
     try:
         db = get_db_connection()
         if db is None:
-            return False
-            
+            # In-memory fallback
+            user_doc = _voice_chat_store.get(user_email)
+            if not user_doc:
+                return False
+            if session_id:
+                for s in user_doc.get("sessions", []):
+                    if s.get("session_id") == session_id:
+                        s["messages"] = []
+                        return True
+                return False
+            else:
+                del _voice_chat_store[user_email]
+                return True
+
         # Get the voice_chat collection
         voice_chat_collection = db[Config.MONGODB_VOICE_CHAT_COLLECTION]
-        
+
         if session_id:
             # Clear only the specified session
             result = voice_chat_collection.update_one(
@@ -239,8 +287,7 @@ def clear_chat_history(user_email, session_id=None):
             # Delete the user's entire chat history
             result = voice_chat_collection.delete_one({"user_email": user_email})
             return result.deleted_count > 0
-    except Exception as e:
-        
+    except Exception:
         return False
 
 
@@ -258,29 +305,36 @@ def save_active_session(user_email, session_id, mode, subject):
     """
     try:
         db = get_db_connection()
+        # In-memory fallback when DB is not available
         if db is None:
-            
-            return False
-        
+            _active_sessions_store[user_email] = {
+                "session_id": session_id,
+                "mode": mode,
+                "subject": subject,
+                "last_active": datetime.utcnow().isoformat(),
+                "user_email": user_email,
+                "created_at": datetime.utcnow().isoformat()
+            }
+            return True
+
         # Verify the collection name is set
         collection_name = Config.MONGODB_ACTIVE_SESSIONS_COLLECTION
         if not collection_name:
-            
             return False
-            
+
         # Get the active_sessions collection
         active_sessions_collection = db[collection_name]
-        
+
         # Check if user already has an active session
         existing_session = active_sessions_collection.find_one({"user_email": user_email})
-        
+
         session_data = {
             "session_id": session_id,
             "mode": mode,
             "subject": subject,
             "last_active": datetime.utcnow().isoformat()
         }
-        
+
         if existing_session:
             # Update existing active session
             result = active_sessions_collection.update_one(
@@ -288,7 +342,7 @@ def save_active_session(user_email, session_id, mode, subject):
                 {"$set": session_data}
             )
             success = result.modified_count > 0
-            
+
             return success
         else:
             # Create new active session record
@@ -296,9 +350,9 @@ def save_active_session(user_email, session_id, mode, subject):
             session_data["created_at"] = datetime.utcnow().isoformat()
             result = active_sessions_collection.insert_one(session_data)
             success = result.inserted_id is not None
-            
+
             return success
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -314,26 +368,25 @@ def get_active_session(user_email):
     try:
         db = get_db_connection()
         if db is None:
-            
-            return None
-            
+            # In-memory fallback
+            return _active_sessions_store.get(user_email)
+
         # Verify the collection name is set
         collection_name = Config.MONGODB_ACTIVE_SESSIONS_COLLECTION
         if not collection_name:
-            
             return None
-            
+
         # Get the active_sessions collection
         active_sessions_collection = db[collection_name]
-        
+
         # Find active session for user
         active_session = active_sessions_collection.find_one({"user_email": user_email})
-        
+
         if active_session:
             return active_session
         else:
             return None
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -349,25 +402,27 @@ def end_active_session(user_email):
     try:
         db = get_db_connection()
         if db is None:
-            
+            # In-memory fallback
+            if user_email in _active_sessions_store:
+                del _active_sessions_store[user_email]
+                return True
             return False
-            
+
         # Verify the collection name is set
         collection_name = Config.MONGODB_ACTIVE_SESSIONS_COLLECTION
         if not collection_name:
-            
             return False
-            
+
         # Get the active_sessions collection
         active_sessions_collection = db[collection_name]
-        
+
         # Remove active session for user
         result = active_sessions_collection.delete_one({"user_email": user_email})
-        
+
         success = result.deleted_count > 0
-        
+
         return success
-    except Exception as e:
+    except Exception:
         return False
 
 
