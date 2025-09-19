@@ -5,6 +5,7 @@ import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { useAuth } from '../hooks/useAuth'
 import { Link } from 'react-router-dom'
+import backEndURL from '../hooks/helper'  // Import the backend URL helper
 import {
   Brain,
   Palette,
@@ -102,52 +103,100 @@ export function Dashboard() {
 
   // Fetch roadmaps when user changes
   useEffect(() => {
-    if (user) {
+    if (user?.email) {
       fetchUserRoadmaps();
     }
   }, [user]);
 
-  // Function to fetch user's roadmaps
+  // Function to fetch user's roadmaps from the database - USING THE REAL API
   const fetchUserRoadmaps = async () => {
+    if (!user?.email) return;
+
     try {
       setIsLoadingRoadmaps(true);
-      // Replace this with your actual API call
-      // const response = await fetch(`/api/roadmaps?userId=${user.uid}`);
-      // const data = await response.json();
-      // setSavedRoadmaps(data);
+      const startTime = Date.now();
 
-      // For now, using mock data - replace with actual API call
-      setTimeout(() => {
-        setSavedRoadmaps([
-          {
-            id: '1',
-            title: 'Full Stack Web Development',
-            description: 'Complete roadmap for becoming a full stack developer with React, Node.js, and databases.',
-            dateCreated: new Date().toISOString().split('T')[0],
-            data: {
-              nodes: [
-                { id: '1', data: { label: 'HTML/CSS' } },
-                { id: '2', data: { label: 'JavaScript' } },
-                { id: '3', data: { label: 'React' } },
-                { id: '4', data: { label: 'Node.js' } },
-                { id: '5', data: { label: 'Database' } }
-              ]
-            }
-          }
-        ]);
-        setIsLoadingRoadmaps(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error fetching roadmaps:', error);
+      const response = await fetch(
+        `${backEndURL}/api/roadmap/user?user_email=${user.email}`
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch roadmaps");
+      }
+
+      const roadmapsData = await response.json();
+
+      // Transform the data to match the expected format
+      const transformedRoadmaps = roadmapsData.map((roadmap) => ({
+        id: roadmap.id,
+        title: roadmap.title,
+        description: roadmap.description,
+        duration: roadmap.duration_weeks,
+        dateCreated: new Date(roadmap.created_at).toLocaleDateString(),
+        data: roadmap.data,
+        skills: roadmap.data.nodes
+          ? roadmap.data.nodes
+            .filter((node) => node.id !== "start")
+            .slice(0, 3)
+            .map((node) => node.title)
+          : [],
+      }));
+
+      // Calculate time elapsed since starting the fetch
+      const timeElapsed = Date.now() - startTime;
+      const minimumLoadingTime = 2000; // 2 seconds in milliseconds
+
+      // If fetch completed too quickly, wait until minimum loading time is reached
+      if (timeElapsed < minimumLoadingTime) {
+        await new Promise(resolve =>
+          setTimeout(resolve, minimumLoadingTime - timeElapsed)
+        );
+      }
+
+      setSavedRoadmaps(transformedRoadmaps);
+    } catch (err) {
+      console.error("Error fetching roadmaps:", err);
+      // Keep any existing roadmaps if there was an error
+    } finally {
       setIsLoadingRoadmaps(false);
     }
   };
 
   // Function to view roadmap details
-  const viewRoadmapDetails = (roadmap) => {
-    // Navigate to roadmap detail page or open modal
-    console.log('Viewing roadmap:', roadmap);
-    // You can implement navigation or modal opening here
+  const viewRoadmapDetails = async (roadmap) => {
+    if (!user?.email) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    try {
+      // If we already have the full roadmap data, just navigate or show modal
+      if (roadmap.data && roadmap.data.nodes && roadmap.data.edges) {
+        // Navigate to roadmap page or open modal
+        console.log('Viewing roadmap:', roadmap);
+        // You could navigate to a detailed view page
+        // window.location.href = `/tools/roadmap?id=${roadmap.id}`;
+        return;
+      }
+
+      // Otherwise fetch the detailed roadmap from the server
+      const response = await fetch(
+        `${backEndURL}/api/roadmap/${roadmap.id}?user_email=${user.email}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch roadmap details");
+      }
+
+      const detailedRoadmap = await response.json();
+      console.log('Detailed roadmap:', detailedRoadmap);
+      // Navigate or show modal with detailed roadmap
+    } catch (error) {
+      console.error("Error fetching roadmap details:", error);
+      // Fallback to using the roadmap data we already have
+      console.log('Using existing roadmap data:', roadmap);
+    }
   };
 
   const mobileStats = [
@@ -416,7 +465,7 @@ export function Dashboard() {
             ) : savedRoadmaps.length > 0 ? (
               // Has roadmaps - show the latest one
               (() => {
-                const latestRoadmap = savedRoadmaps[0]; // Assuming they're sorted by creation date
+                const latestRoadmap = savedRoadmaps[0]; // Get the first roadmap (latest)
                 const progressPercentage = Math.min(
                   Math.round((new Date() - new Date(latestRoadmap.dateCreated)) / (1000 * 60 * 60 * 24 * 7) * 10),
                   100

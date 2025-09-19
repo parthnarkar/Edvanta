@@ -36,6 +36,7 @@ import {
 
 import backEndURL from "../../hooks/helper";
 import { useAuth } from "../../hooks/useAuth";
+import { use } from "react";
 
 export function Roadmap() {
   const { user } = useAuth();
@@ -52,6 +53,7 @@ export function Roadmap() {
   const [selectedRoadmap, setSelectedRoadmap] = useState(null);
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
 
+
   // Fetch user's roadmaps when component mounts or user changes
   useEffect(() => {
     if (user?.email) {
@@ -66,7 +68,7 @@ export function Roadmap() {
     try {
       setIsLoadingRoadmaps(true);
       const startTime = Date.now();
-      
+
       const response = await fetch(
         `${backEndURL}/api/roadmap/user?user_email=${user.email}`
       );
@@ -88,19 +90,19 @@ export function Roadmap() {
         data: roadmap.data,
         skills: roadmap.data.nodes
           ? roadmap.data.nodes
-              .filter((node) => node.id !== "start")
-              .slice(0, 3)
-              .map((node) => node.title)
+            .filter((node) => node.id !== "start")
+            .slice(0, 3)
+            .map((node) => node.title)
           : [],
       }));
 
       // Calculate time elapsed since starting the fetch
       const timeElapsed = Date.now() - startTime;
       const minimumLoadingTime = 2000; // 2 seconds in milliseconds
-      
+
       // If fetch completed too quickly, wait until minimum loading time is reached
       if (timeElapsed < minimumLoadingTime) {
-        await new Promise(resolve => 
+        await new Promise(resolve =>
           setTimeout(resolve, minimumLoadingTime - timeElapsed)
         );
       }
@@ -207,9 +209,9 @@ export function Roadmap() {
         data: detailedRoadmap.data,
         skills: detailedRoadmap.data.nodes
           ? detailedRoadmap.data.nodes
-              .filter((node) => node.id !== "start")
-              .slice(0, 3)
-              .map((node) => node.title)
+            .filter((node) => node.id !== "start")
+            .slice(0, 3)
+            .map((node) => node.title)
           : [],
       };
 
@@ -631,7 +633,7 @@ export function Roadmap() {
                       <p className="text-xs xs:text-sm sm:text-base font-medium truncate">
                         {new Date(
                           new Date(selectedRoadmap.dateCreated).getTime() +
-                            selectedRoadmap.duration * 7 * 24 * 60 * 60 * 1000
+                          selectedRoadmap.duration * 7 * 24 * 60 * 60 * 1000
                         ).toLocaleDateString()}
                       </p>
                     </div>
@@ -656,13 +658,12 @@ export function Roadmap() {
                       <div className="flex gap-2 xs:gap-3 sm:gap-5">
                         {/* Step Icon */}
                         <div
-                          className={`flex-shrink-0 w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-md z-[5] ${
-                            index === 0
-                              ? "bg-gradient-to-br from-green-400 to-green-600 text-white"
-                              : index === selectedRoadmap.data.nodes.length - 1
+                          className={`flex-shrink-0 w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-md z-[5] ${index === 0
+                            ? "bg-gradient-to-br from-green-400 to-green-600 text-white"
+                            : index === selectedRoadmap.data.nodes.length - 1
                               ? "bg-gradient-to-br from-blue-400 to-indigo-600 text-white"
                               : "bg-gradient-to-br from-blue-300 to-blue-500 text-white"
-                          }`}
+                            }`}
                         >
                           {index === 0 ? (
                             <MapPin className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-5 sm:w-5" />
@@ -716,8 +717,8 @@ export function Roadmap() {
                                           {typeof resource === "string"
                                             ? resource
                                             : resource.name ||
-                                              resource.title ||
-                                              "Resource"}
+                                            resource.title ||
+                                            "Resource"}
                                         </span>
                                       </li>
                                     ))}
