@@ -32,6 +32,18 @@ import {
   Trash2,
 } from "lucide-react";
 import backEndURL from "../../hooks/helper";
+import { useAuth } from "../../hooks/useAuth";
+import { db } from "../../lib/firebase";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  getDocs,
+} from "firebase/firestore";
 
 const steps = [
   { id: "input", title: "Input", icon: FileText },
@@ -42,13 +54,37 @@ const steps = [
 ];
 
 export function VisualGenerator() {
-  const [currentStep] = useState(0); // Simplified unused advanced steps
+  const { user } = useAuth();
+
+  // Core inputs
   const [content, setContent] = useState("");
   const [pdfFile, setPdfFile] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
-  // const [pdfUrl, setPdfUrl] = useState("");
-  // const [audioUrl, setAudioUrl] = useState("");
+
+  // Recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState("");
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const recordedAudioElementRef = useRef(null);
+
+  // UI / progress state
+  const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [historyVideos, setHistoryVideos] = useState([]);
+
+  // Derived step index from progress (simple thresholds)
+  const currentStep = (() => {
+    if (progress >= 100) return 4; // download
+    if (progress >= 70) return 3; // generate
+    if (progress >= 40) return 2; // storyboard
+    if (progress >= 10) return 1; // summarize
+    return 0; // input
+  })();
 
   const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -305,31 +341,48 @@ export function VisualGenerator() {
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
           <div className="flex items-center justify-between mb-4 overflow-x-auto">
-            {steps.map((step, index) => (
-              <div
-                key={step.id}
-                className={`flex items-center ${
-                  index < steps.length - 1 ? "flex-1" : ""
-                }`}
-              >
+            {steps.map((step, index) => {
+              const active = index === currentStep;
+              const complete = index < currentStep;
+              const Icon = step.icon;
+              return (
                 <div
-                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full ${
-                    index <= currentStep
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-500"
+                  key={step.id}
+                  className={`flex items-center ${
+                    index < steps.length - 1 ? "flex-1" : ""
                   }`}
                 >
-                  {i < 0 ? <CheckCircle /> : i === 0 ? <Clock /> : <s.icon />}
-                </div>
-                {index < steps.length - 1 && (
                   <div
-                    className={`flex-1 h-1 mx-2 sm:mx-4 ${
-                      index < currentStep ? "bg-blue-600" : "bg-gray-200"
+                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-xs sm:text-sm font-medium transition-colors duration-300 ${
+                      complete
+                        ? "bg-blue-600 text-white"
+                        : active
+                        ? "bg-blue-100 text-blue-700 border border-blue-300"
+                        : "bg-gray-200 text-gray-500"
                     }`}
-                  />
-                )}
-              </div>
-            ))}
+                  >
+                    {complete ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : active ? (
+                      <Clock className="h-4 w-4" />
+                    ) : (
+                      <Icon className="h-4 w-4" />
+                    )}
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={`flex-1 h-1 mx-2 sm:mx-4 rounded-full overflow-hidden bg-gray-200`}
+                    >
+                      <div
+                        className={`h-full transition-all duration-500 ${
+                          index < currentStep ? "bg-blue-600 w-full" : "w-0"
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <Progress value={progress} className="mb-1" />
           <p className="text-xs text-gray-500">Progress: {progress}%</p>
@@ -480,7 +533,16 @@ export function VisualGenerator() {
                   )}
                   {recordedAudioUrl && (
                     <>
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (recordedAudioElementRef.current) {
+                            recordedAudioElementRef.current.currentTime = 0;
+                            recordedAudioElementRef.current.play();
+                          }
+                        }}
+                      >
                         <Play className="h-4 w-4 mr-1" />
                         Preview
                       </Button>
@@ -503,6 +565,7 @@ export function VisualGenerator() {
                 )}
                 {recordedAudioUrl && (
                   <audio
+                    ref={recordedAudioElementRef}
                     controls
                     src={recordedAudioUrl}
                     className="w-full mt-3"
@@ -552,8 +615,14 @@ export function VisualGenerator() {
               <Button
                 variant="outline"
                 onClick={() => {
+                  // Reset all state for a fresh run
                   setVideoUrl("");
-                  setProgress(20);
+                  setContent("");
+                  setPdfFile(null);
+                  setAudioFile(null);
+                  setRecordedAudioUrl("");
+                  setProgress(0);
+                  setError("");
                 }}
               >
                 New
