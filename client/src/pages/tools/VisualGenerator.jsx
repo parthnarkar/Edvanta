@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -51,19 +51,15 @@ const steps = [
 export function VisualGenerator() {
   const [currentStep, setCurrentStep] = useState(0);
   const [content, setContent] = useState("");
-  const [file, setFile] = useState(null); // reserved for future use
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(20);
   const [pdfFile, setPdfFile] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
-  // Recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedBlob, setRecordedBlob] = useState(null);
-  const [recordedUrl, setRecordedUrl] = useState("");
-  const mediaRecorderRef = useRef(null);
-  const recordedChunksRef = useRef([]);
   const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  // const [pdfUrl, setPdfUrl] = useState("");
+  // const [audioUrl, setAudioUrl] = useState("");
 
   const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -146,17 +142,11 @@ export function VisualGenerator() {
   };
 
   const handleAudioSubmit = async () => {
-    // Prefer recorded audio if present
-    const fileToUse = recordedBlob
-      ? new File([recordedBlob], "recording.webm", {
-          type: recordedBlob.type || "audio/webm",
-        })
-      : audioFile;
-    if (!fileToUse) return;
+    if (!audioFile) return;
     setLoading(true);
     setProgress(5);
     try {
-      const uploadedUrl = await uploadToCloudinary(fileToUse);
+      const uploadedUrl = await uploadToCloudinary(audioFile);
       setProgress(30);
       const { url } = await postJSON("/api/visual/audio-url-to-video", {
         audio_url: uploadedUrl,
@@ -172,58 +162,11 @@ export function VisualGenerator() {
     }
   };
 
-  const startRecording = async () => {
-    setError("");
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setError("Audio recording not supported in this browser.");
-      return;
+  const handleFileUpload = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      recordedChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
-      };
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, {
-          type: "audio/webm",
-        });
-        setRecordedBlob(blob);
-        const url = URL.createObjectURL(blob);
-        setRecordedUrl(url);
-        // stop all tracks
-        stream.getTracks().forEach((t) => t.stop());
-      };
-      mediaRecorder.start();
-      setIsRecording(true);
-      setRecordedBlob(null);
-      setRecordedUrl("");
-    } catch (e) {
-      setError(e.message || "Failed to start recording");
-    }
-  };
-
-  const stopRecording = () => {
-    try {
-      if (
-        mediaRecorderRef.current &&
-        mediaRecorderRef.current.state === "recording"
-      ) {
-        mediaRecorderRef.current.stop();
-      }
-    } catch (e) {
-      setError("Failed to stop recording");
-    } finally {
-      setIsRecording(false);
-    }
-  };
-
-  const resetRecording = () => {
-    setRecordedBlob(null);
-    setRecordedUrl("");
-    recordedChunksRef.current = [];
   };
 
   const generateContent = () => {
@@ -248,12 +191,14 @@ export function VisualGenerator() {
           AI-powered visuals.
         </p>
       </div>
+
       {/* Error Message */}
       {error && (
         <div className="p-3 text-xs sm:text-sm rounded bg-red-100 text-red-700 border border-red-200">
           {error}
         </div>
       )}
+
       {/* Progress Steps */}
       <Card>
         <CardHeader className="px-4 sm:px-6">
@@ -407,8 +352,7 @@ export function VisualGenerator() {
                   Audio Upload
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base">
-                  Upload or record an audio clip (mp3/wav/m4a/webm) to generate
-                  a video.
+                  Upload an audio file (mp3/wav/m4a) to generate a video.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
@@ -428,7 +372,7 @@ export function VisualGenerator() {
                     asChild
                     variant="outline"
                     size="sm"
-                    className="w-full mb-3"
+                    className="w-full"
                   >
                     <label
                       htmlFor="audio-file"
@@ -437,70 +381,19 @@ export function VisualGenerator() {
                       Select Audio
                     </label>
                   </Button>
-                  {audioFile && !recordedBlob && (
+                  {audioFile && (
                     <p className="mt-2 text-xs text-blue-600">
                       Selected: {audioFile.name}
                     </p>
                   )}
-                  {/* Recording Controls */}
-                  <div className="mt-4 space-y-2">
-                    {!isRecording && (
-                      <Button
-                        onClick={startRecording}
-                        variant="secondary"
-                        size="sm"
-                        disabled={loading}
-                        className="w-full"
-                      >
-                        {recordedBlob ? "Re-record Audio" : "Start Recording"}
-                      </Button>
-                    )}
-                    {isRecording && (
-                      <Button
-                        onClick={stopRecording}
-                        variant="destructive"
-                        size="sm"
-                        className="w-full"
-                      >
-                        Stop Recording
-                      </Button>
-                    )}
-                    {recordedUrl && !isRecording && (
-                      <div className="space-y-2">
-                        <audio controls src={recordedUrl} className="w-full" />
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={resetRecording}
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                          >
-                            Discard
-                          </Button>
-                          <Button
-                            onClick={handleAudioSubmit}
-                            size="sm"
-                            className="flex-1"
-                            disabled={loading}
-                          >
-                            {loading ? "Processing..." : "Use Recording"}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
-                {!recordedBlob && (
-                  <Button
-                    onClick={handleAudioSubmit}
-                    disabled={loading || (!audioFile && !recordedBlob)}
-                    className="w-full text-sm sm:text-base py-2 sm:py-3"
-                  >
-                    {loading
-                      ? "Uploading & Processing..."
-                      : "Process Selected Audio"}
-                  </Button>
-                )}
+                <Button
+                  onClick={handleAudioSubmit}
+                  disabled={loading || !audioFile}
+                  className="w-full text-sm sm:text-base py-2 sm:py-3"
+                >
+                  {loading ? "Uploading & Processing..." : "Process Audio"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

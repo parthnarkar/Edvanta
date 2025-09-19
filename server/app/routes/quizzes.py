@@ -5,28 +5,26 @@ Responsible for generating quizzes from topic content and managing quiz data.
 """
 from flask import Blueprint, request, jsonify
 import uuid
+import os
 from datetime import datetime
+from pymongo import MongoClient
+from bson import ObjectId
 from ..utils.quizzes_utils import create_quiz
 from ..config import Config
-from ..utils.mongo_utils import connect_to_mongodb
 
 quizzes_bp = Blueprint("quizzes", __name__)
 
-# MongoDB connection via centralized utils
+# MongoDB connection
 try:
-    client, db, quizzes_collection_name = connect_to_mongodb(
-        "MONGODB_QUIZ_COLLECTION", fallback_collection="quizzes"
-    )
-    # Reuse same DB for history collection name resolution
-    _, _, quiz_history_collection_name = connect_to_mongodb(
-        "MONGODB_QUIZ_HISTORY_COLLECTION", fallback_collection="quiz_history"
-    )
+    mongo_uri = Config.MONGODB_URI
+    db_name = Config.MONGODB_DB_NAME
+    mongo_collection_name_1 = Config.MONGODB_QUIZ_COLLECTION
+    mongo_collection_name_2 = Config.MONGODB_QUIZ_HISTORY_COLLECTION
 
-    if not db:
-        raise Exception("MongoDB connection not available")
-
-    quizzes_collection = db[quizzes_collection_name or "quizzes"]
-    quiz_history_collection = db[quiz_history_collection_name or "quiz_history"]
+    client = MongoClient(mongo_uri)
+    db = client[db_name]
+    quizzes_collection = db[mongo_collection_name_1]
+    quiz_history_collection = db[mongo_collection_name_2]
 
 except Exception as e:
     # Fallback to in-memory storage if MongoDB is not available

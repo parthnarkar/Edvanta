@@ -50,20 +50,19 @@ const quickActions = [
     color: 'bg-purple-100 text-purple-700'
   },
   {
-    icon: Award,
-    title: 'Home Page',
-    description: 'Explore all features',
-    href: '/',
-    color: 'bg-orange-100 text-orange-700'
-  },
-  {
     icon: FileText,
     title: 'Resume Builder',
     description: 'Build your resume with AI',
     href: '/tools/resume-builder',
     color: 'bg-yellow-100 text-yellow-700'
   },
-
+  {
+    icon: Award,
+    title: 'Achievements',
+    description: 'Track your learning achievements',
+    href: '/tools/achievements',
+    color: 'bg-orange-100 text-orange-700'
+  }
 ]
 
 const recentActivities = [
@@ -161,19 +160,13 @@ export function Dashboard() {
       ? [...currentCards, ...quickActions.slice(0, visibleCards - currentCards.length)]
       : currentCards;
 
-  // Responsive grid for Quick Actions (mobile view)
-  const isMobile = window.matchMedia("(max-width: 640px)").matches;
-
-  // For mobile: 2 columns x 2 rows grid, icon + title only (show only first 4 actions)
-  const mobileQuickActions = quickActions.slice(0, 4); // Show first 4 actions
-
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
       {/* Welcome Header */}
       <div className="bg-primary rounded-xl p-4 sm:p-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 text-white">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
               Welcome back, {userProfile?.name || user?.displayName || 'Learner'}! 👋
             </h1>
             <p className="text-sm sm:text-base text-blue-100">
@@ -210,10 +203,7 @@ export function Dashboard() {
       </div>
 
       {/* Quick Actions Carousel */}
-      <Card
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+      <Card>
         <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
@@ -224,31 +214,12 @@ export function Dashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
-          {isMobile ? (
-            <div
-              className="grid grid-cols-2 grid-rows-2 gap-3"
-              style={{
-                minHeight: '120px',
-                transition: 'opacity 0.7s, transform 0.7s'
-              }}
-            >
-              {mobileQuickActions.map((action, index) => (
-                <Link
-                  key={action.title + index}
-                  to={action.href}
-                  className="group flex flex-col items-center justify-center p-3 rounded-lg border hover:shadow-lg transition-all bg-white hover:bg-gray-50 animate-fadeIn"
-                  style={{
-                    transition: 'transform 0.5s, box-shadow 0.5s'
-                  }}
-                >
-                  <div className={`w-10 h-10 rounded-lg ${action.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                    <action.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 text-xs text-center">{action.title}</h3>
-                </Link>
-              ))}
-            </div>
-          ) : (
+          <div
+            className="relative"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {/* Cards with animation */}
             <div
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-3000"
               style={{
@@ -276,7 +247,7 @@ export function Dashboard() {
                 </Link>
               ))}
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
@@ -365,8 +336,5 @@ export function Dashboard() {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px);}
   to { opacity: 1; transform: translateY(0);}
-}
-.animate-fadeIn {
-  animation: fadeIn 0.7s;
 }
 */
