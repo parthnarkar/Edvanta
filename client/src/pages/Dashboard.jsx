@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -44,10 +44,24 @@ const quickActions = [
   },
   {
     icon: MapPin,
-    title: 'Plan Career Path',
+    title: 'Voice Tutor',
     description: 'Create your learning roadmap',
-    href: '/tools/roadmap',
+    href: '/tools/conversational-tutor',
     color: 'bg-purple-100 text-purple-700'
+  },
+  {
+    icon: FileText,
+    title: 'Resume Builder',
+    description: 'Build your resume with AI',
+    href: '/tools/resume-builder',
+    color: 'bg-yellow-100 text-yellow-700'
+  },
+  {
+    icon: Award,
+    title: 'Achievements',
+    description: 'Track your learning achievements',
+    href: '/tools/achievements',
+    color: 'bg-orange-100 text-orange-700'
   }
 ]
 
@@ -76,14 +90,75 @@ const recentActivities = [
 ]
 
 export function Dashboard() {
-  const { user, userProfile } = useAuth()
+  const { user, userProfile } = useAuth();
 
-  const stats = [
+  const mobileStats = [
     { label: 'Quizzes Taken', value: '24', icon: Brain, change: '+3 this week' },
-    { label: 'Lessons Generated', value: '12', icon: Palette, change: '+2 this week' },
     { label: 'Learning Hours', value: '47', icon: Clock, change: '+8 this week' },
+    { label: 'Lessons Generated', value: '12', icon: Palette, change: '+2 this week' },
     { label: 'Roadmap Progress', value: '68%', icon: TrendingUp, change: '+12% this month' }
-  ]
+  ];
+
+  const laptopStats = [
+    { label: 'Quizzes Taken', value: '24', icon: Brain, change: '+3 this week' },
+    { label: 'Learning Hours', value: '47', icon: Clock, change: '+8 this week' },
+    { label: 'Lessons Generated', value: '12', icon: Palette, change: '+2 this week' },
+    { label: 'Roadmap Progress', value: '68%', icon: TrendingUp, change: '+12% this month' }
+  ];
+
+  // Responsive stats selection
+  const [stats, setStats] = React.useState(mobileStats);
+
+  React.useEffect(() => {
+    // Use window.matchMedia to detect screen size
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handleResize = () => {
+      setStats(mq.matches ? laptopStats : mobileStats);
+    };
+    handleResize();
+    mq.addEventListener("change", handleResize);
+    return () => mq.removeEventListener("change", handleResize);
+  }, []);
+
+  // Quick Actions Carousel State
+  const [quickIndex, setQuickIndex] = useState(0);
+  const quickLength = quickActions.length;
+  const visibleCards = 4;
+  const intervalRef = useRef();
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Auto-slide logic (stops on hover)
+  useEffect(() => {
+    if (!isHovered) {
+      intervalRef.current = setInterval(() => {
+        setQuickIndex((prev) => (prev + visibleCards) % quickLength);
+      }, 6000); // Increased duration to 6 seconds
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [quickLength, isHovered]);
+
+  // Manual navigation
+  const handlePrev = () => {
+    setQuickIndex((prev) =>
+      prev - visibleCards < 0
+        ? quickLength - (quickLength % visibleCards || visibleCards)
+        : prev - visibleCards
+    );
+  };
+
+  const handleNext = () => {
+    setQuickIndex((prev) =>
+      (prev + visibleCards) % quickLength
+    );
+  };
+
+  // Slice for visible cards
+  const currentCards = quickActions.slice(quickIndex, quickIndex + visibleCards);
+  // If at end, wrap around
+  const cardsToShow =
+    currentCards.length < visibleCards
+      ? [...currentCards, ...quickActions.slice(0, visibleCards - currentCards.length)]
+      : currentCards;
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
@@ -111,7 +186,7 @@ export function Dashboard() {
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600 truncate">
+              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600 ">
                 {stat.label}
               </CardTitle>
               <stat.icon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
@@ -127,11 +202,11 @@ export function Dashboard() {
         ))}
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions Carousel */}
       <Card>
         <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
             Quick Actions
           </CardTitle>
           <CardDescription className="text-sm sm:text-base">
@@ -139,21 +214,39 @@ export function Dashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {quickActions.map((action, index) => (
-              <Link
-                key={index}
-                to={action.href}
-                className="group p-3 sm:p-4 rounded-lg border hover:shadow-md transition-all bg-white hover:bg-gray-50"
-              >
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${action.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <action.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{action.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{action.description}</p>
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mt-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            ))}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {/* Cards with animation */}
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-3000"
+              style={{
+                minHeight: '180px',
+                opacity: 1,
+                transform: 'translateY(0)',
+                transition: 'opacity 1.5s, transform 2s'
+              }}
+            >
+              {cardsToShow.map((action, index) => (
+                <Link
+                  key={action.title + index}
+                  to={action.href}
+                  className="group p-3 sm:p-4 rounded-lg border hover:shadow-lg transition-all bg-white hover:bg-gray-50"
+                  style={{
+                    transition: 'transform 0.5s, box-shadow 0.5s',
+                    animation: 'fadeIn 0.7s'
+                  }}
+                >
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${action.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                    <action.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{action.title}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{action.description}</p>
+                </Link>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -237,3 +330,11 @@ export function Dashboard() {
     </div>
   )
 }
+
+// Add this CSS to your global styles or inside a <style> tag if needed:
+/*
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+*/
