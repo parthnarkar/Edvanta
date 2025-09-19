@@ -74,4 +74,51 @@ def create_app() -> Flask:
 
         return {"status": "ok", "features": features}
 
+    # Ensure CORS headers are present on every response. This complements
+    # flask_cors and guarantees headers are attached even for error pages
+    # or responses generated before blueprint handlers run.
+    from flask import request
+
+    @app.after_request
+    def ensure_cors_headers(response):
+        """Attach permissive CORS headers.
+
+        - If `ALLOWED_ORIGINS` contains '*' we echo the request Origin when
+          present (to allow credentials) and fall back to '*' otherwise.
+        - Otherwise only echo allowed origins.
+        """
+        origin = request.headers.get("Origin")
+        allowed = getattr(Config, "ALLOWED_ORIGINS", ["*"])
+
+        try:
+            if isinstance(allowed, str):
+                allowed_list = [o.strip() for o in allowed.split(",")]
+            else:
+                allowed_list = list(allowed)
+        except Exception:
+            allowed_list = ["*"]
+
+        if "*" in allowed_list:
+            if origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Vary"] = "Origin"
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+            else:
+                response.headers["Access-Control-Allow-Origin"] = "*"
+        else:
+            if origin and origin in allowed_list:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Vary"] = "Origin"
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+
+        # Common preflight and CORS headers
+        response.headers.setdefault(
+            "Access-Control-Allow-Headers", "Content-Type,Authorization"
+        )
+        response.headers.setdefault(
+            "Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        )
+
+        return response
+
     return app
