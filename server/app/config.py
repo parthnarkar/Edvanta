@@ -30,7 +30,12 @@ class Config:
     DEBUG = ENV == "development"
 
     # Server settings
-    PORT = int(os.getenv("PORT"))
+    # Vercel provides a PORT env var when running serverless functions, but
+    # default to 5000 for local runs to avoid int(None) errors.
+    try:
+        PORT = int(os.getenv("PORT", "5000"))
+    except Exception:
+        PORT = 5000
     HOST = os.getenv("HOST", "0.0.0.0")
 
     # Google Cloud / Vertex AI settings
@@ -65,7 +70,8 @@ class Config:
     CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 
     # CORS settings
-    ALLOWED_ORIGINS=os.getenv("ALLOWED_ORIGINS")
+    # Default to permissive '*' to avoid accidental CORS blocking in deploys
+    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 
     # MongoDB Credentials
     MONGODB_URI = os.getenv("MONGODB_URI")
