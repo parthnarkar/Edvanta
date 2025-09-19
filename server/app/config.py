@@ -65,7 +65,7 @@ class Config:
     CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 
     # CORS settings
-    ALLOWED_ORIGINS: List[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
+    ALLOWED_ORIGINS=os.getenv("ALLOWED_ORIGINS")
 
     # MongoDB Credentials
     MONGODB_URI = os.getenv("MONGODB_URI")

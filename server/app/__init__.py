@@ -88,7 +88,7 @@ def create_app() -> Flask:
         - Otherwise only echo allowed origins.
         """
         origin = request.headers.get("Origin")
-        allowed = getattr(Config, "ALLOWED_ORIGINS", ["*"])
+        allowed = Config.ALLOWED_ORIGINS
 
         try:
             if isinstance(allowed, str):
@@ -120,5 +120,13 @@ def create_app() -> Flask:
         )
 
         return response
+
+    # Explicitly handle preflight OPTIONS for any /api/* route so that
+    # proxies or upstream error pages still yield the proper CORS headers.
+    @app.route('/api/<path:_any>', methods=['OPTIONS'])
+    def _preflight(_any):
+        # Return empty 204; after_request will attach necessary CORS headers
+        from flask import make_response
+        return make_response(('', 204))
 
     return app
