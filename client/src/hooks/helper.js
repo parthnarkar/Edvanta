@@ -9,14 +9,14 @@
 let backEndURL = "";
 
 if (import.meta.env.MODE === "production") {
-  backEndURL = import.meta.env.VITE_PRODUCTION_API_BASE_URL || "";
+  backEndURL = import.meta.env.VITE_PRODUCTION_API_BASE_URL;
   // If no explicit production URL provided, use same-origin `/api`.
   if (!backEndURL) {
     // empty string indicates same origin; client code concatenates paths like `${backEndURL}/api/...`
     backEndURL = "";
   }
 } else {
-  backEndURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  backEndURL = import.meta.env.VITE_API_BASE_URL;
 }
 
 // Normalize: remove trailing slash if present
