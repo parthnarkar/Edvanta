@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import { Progress } from "../../components/ui/progress";
 import {
@@ -21,57 +20,39 @@ import {
   FileText,
   Wand2,
   Image,
-  Video,
   Download,
   ArrowRight,
   CheckCircle,
   Clock,
   Sparkles,
+  History,
+  Mic,
+  Square,
+  Play,
+  Trash2,
 } from "lucide-react";
 import backEndURL from "../../hooks/helper";
-import { useEffect } from "react";
 
 const steps = [
-  { id: "input", title: "Input Content", icon: FileText, status: "completed" },
-  { id: "summarize", title: "Summarize", icon: Wand2, status: "active" },
-  {
-    id: "storyboard",
-    title: "Create Storyboard",
-    icon: Image,
-    status: "pending",
-  },
-  {
-    id: "generate",
-    title: "Generate Assets",
-    icon: Sparkles,
-    status: "pending",
-  },
-  { id: "download", title: "Download", icon: Download, status: "pending" },
+  { id: "input", title: "Input", icon: FileText },
+  { id: "summarize", title: "Summarize", icon: Wand2 },
+  { id: "storyboard", title: "Storyboard", icon: Image },
+  { id: "generate", title: "Generate", icon: Sparkles },
+  { id: "download", title: "Download", icon: Download },
 ];
 
 export function VisualGenerator() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep] = useState(0); // Simplified unused advanced steps
   const [content, setContent] = useState("");
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(20);
   const [pdfFile, setPdfFile] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
-  const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   // const [pdfUrl, setPdfUrl] = useState("");
   // const [audioUrl, setAudioUrl] = useState("");
 
-  // Scroll to top on component mount
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  }, []);
-
   const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
   async function postJSON(path, body) {
     setError("");
     try {
@@ -89,24 +70,148 @@ export function VisualGenerator() {
     }
   }
 
+  const saveVideoRecord = async (meta) => {
+    if (!user || !meta.videoUrl) return;
+    try {
+      setSaving(true);
+      await addDoc(collection(db, "visual_videos"), {
+        ...meta,
+        userId: user.uid,
+        email: user.email,
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) {
+      setHistoryVideos([]);
+      return;
+    }
+    let unsub = null;
+
+    const fallbackLoadWithoutIndex = async () => {
+      try {
+        // Plain query without orderBy (no composite index required)
+        const qPlain = query(
+          collection(db, "visual_videos"),
+          where("userId", "==", user.uid)
+        );
+        const snap = await getDocs(qPlain);
+        const list = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+        // Client-side sort by createdAt (desc)
+        list.sort(
+          (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+        );
+        setHistoryVideos(list);
+      } catch (e) {
+        console.error("History fallback failed", e);
+      }
+    };
+
+    try {
+      const qFull = query(
+        collection(db, "visual_videos"),
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+      unsub = onSnapshot(
+        qFull,
+        (snap) => {
+          const list = [];
+          snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+          setHistoryVideos(list);
+        },
+        (err) => {
+          if (err?.code === "failed-precondition") {
+            fallbackLoadWithoutIndex();
+          } else {
+            console.error("History listener error", err);
+          }
+        }
+      );
+    } catch (err) {
+      if (err?.code === "failed-precondition") {
+        fallbackLoadWithoutIndex();
+      } else {
+        console.error("History init error", err);
+      }
+    }
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [user]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      recordedChunksRef.current = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      rec.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, {
+          type: "audio/webm",
+        });
+        const url = URL.createObjectURL(blob);
+        setRecordedAudioUrl(url);
+        setAudioFile(
+          new File([blob], `recording-${Date.now()}.webm`, {
+            type: "audio/webm",
+          })
+        );
+      };
+      rec.start();
+      mediaRecorderRef.current = rec;
+      setIsRecording(true);
+      setRecordSeconds(0);
+    } catch (e) {
+      setError(e.message || "Microphone denied");
+    }
+  };
+  const stopRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
+    setIsRecording(false);
+  };
+  useEffect(() => {
+    if (!isRecording) return;
+    const id = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [isRecording]);
+  const formatTime = (t) =>
+    `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(
+      2,
+      "0"
+    )}`;
+  const discardRecording = () => {
+    setRecordedAudioUrl("");
+    setAudioFile(null);
+    recordedChunksRef.current = [];
+  };
+
   async function uploadToCloudinary(file) {
-    if (!file) throw new Error("No file provided");
     const form = new FormData();
     form.append("file", file);
     form.append("upload_preset", UPLOAD_PRESET);
     const resourceType = file.type.startsWith("audio")
       ? "video"
       : file.type.startsWith("video")
-        ? "video"
-        : file.type === "application/pdf"
-          ? "raw"
-          : "image";
+      ? "video"
+      : file.type === "application/pdf"
+      ? "raw"
+      : "image";
     const endpoint = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
     const res = await fetch(endpoint, { method: "POST", body: form });
     const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error?.message || "Upload failed");
-    }
+    if (!res.ok) throw new Error(data.error?.message || "Upload failed");
     return data.secure_url;
   }
 
@@ -118,102 +223,84 @@ export function VisualGenerator() {
       const { url } = await postJSON("/api/visual/text-to-video", {
         text: content,
       });
-      setProgress(90);
       setVideoUrl(url);
-      setCurrentStep(steps.length - 1);
       setProgress(100);
-    } catch (_) {
+      await saveVideoRecord({
+        sourceType: "text",
+        inputSample: content.slice(0, 180),
+        videoUrl: url,
+      });
+    } catch (e) {
       setProgress(0);
     } finally {
       setLoading(false);
     }
   };
-
   const handlePdfSubmit = async () => {
     if (!pdfFile) return;
     setLoading(true);
     setProgress(5);
     try {
-      const uploadedUrl = await uploadToCloudinary(pdfFile); // returns secure_url
-      setProgress(30);
+      const pdfUrl = await uploadToCloudinary(pdfFile);
       const { url } = await postJSON("/api/visual/pdf-url-to-video", {
-        pdf_url: uploadedUrl,
+        pdf_url: pdfUrl,
       });
-      setProgress(90);
       setVideoUrl(url);
-      setCurrentStep(steps.length - 1);
       setProgress(100);
-    } catch (_) {
+      await saveVideoRecord({
+        sourceType: "pdf",
+        inputSample: pdfFile.name,
+        videoUrl: url,
+        sourceFileName: pdfFile.name,
+      });
+    } catch {
       setProgress(0);
     } finally {
       setLoading(false);
     }
   };
-
   const handleAudioSubmit = async () => {
     if (!audioFile) return;
     setLoading(true);
     setProgress(5);
     try {
-      const uploadedUrl = await uploadToCloudinary(audioFile);
-      setProgress(30);
+      const audUrl = await uploadToCloudinary(audioFile);
       const { url } = await postJSON("/api/visual/audio-url-to-video", {
-        audio_url: uploadedUrl,
+        audio_url: audUrl,
       });
-      setProgress(90);
       setVideoUrl(url);
-      setCurrentStep(steps.length - 1);
       setProgress(100);
-    } catch (_) {
+      await saveVideoRecord({
+        sourceType: recordedAudioUrl ? "recorded-audio" : "audio-file",
+        inputSample: audioFile.name,
+        videoUrl: url,
+        sourceFileName: audioFile.name,
+      });
+    } catch {
       setProgress(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileUpload = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-    }
-  };
-
-  const generateContent = () => {
-    setLoading(true);
-    // Simulate content generation
-    setTimeout(() => {
-      setLoading(false);
-      setCurrentStep(currentStep + 1);
-      setProgress(progress + 20);
-    }, 3000);
-  };
-
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6">
-      {/* Header */}
+    <div className="space-y-6 p-4">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          Visual Content Generator
-        </h1>
-        <p className="text-sm sm:text-base text-gray-600">
-          Transform your text and documents into engaging animated lessons with
-          AI-powered visuals.
+        <h1 className="text-2xl font-bold">Visual Content Generator</h1>
+        <p className="text-sm text-gray-600">
+          Convert Text / PDF / Audio (upload or record) into video.
         </p>
       </div>
-
-      {/* Error Message */}
       {error && (
-        <div className="p-3 text-xs sm:text-sm rounded bg-red-100 text-red-700 border border-red-200">
+        <div className="text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200">
           {error}
         </div>
       )}
-
-      {/* Progress Steps */}
       <Card>
-        <CardHeader className="px-4 sm:px-6">
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Wand2 className="h-4 w-4 sm:h-5 sm:w-5" />
-            Generation Progress
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4" />
+            Progress
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
@@ -221,264 +308,231 @@ export function VisualGenerator() {
             {steps.map((step, index) => (
               <div
                 key={step.id}
-                className={`flex items-center ${index < steps.length - 1 ? "flex-1" : ""
-                  }`}
+                className={`flex items-center ${
+                  index < steps.length - 1 ? "flex-1" : ""
+                }`}
               >
                 <div
-                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full ${index <= currentStep
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-500"
-                    }`}
+                  className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full ${
+                    index <= currentStep
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-500"
+                  }`}
                 >
-                  {index < currentStep ? (
-                    <CheckCircle className="h-3 w-3 sm:h-5 sm:w-5" />
-                  ) : index === currentStep ? (
-                    <Clock className="h-3 w-3 sm:h-5 sm:w-5" />
-                  ) : (
-                    <step.icon className="h-3 w-3 sm:h-5 sm:w-5" />
-                  )}
+                  {i < 0 ? <CheckCircle /> : i === 0 ? <Clock /> : <s.icon />}
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`flex-1 h-1 mx-2 sm:mx-4 ${index < currentStep ? "bg-blue-600" : "bg-gray-200"
-                      }`}
+                    className={`flex-1 h-1 mx-2 sm:mx-4 ${
+                      index < currentStep ? "bg-blue-600" : "bg-gray-200"
+                    }`}
                   />
                 )}
               </div>
             ))}
           </div>
-          <Progress value={progress} className="mb-2" />
-          <p className="text-xs sm:text-sm text-gray-500">
-            Step {currentStep + 1} of {steps.length}:{" "}
-            {steps[currentStep]?.title}
-          </p>
+          <Progress value={progress} className="mb-1" />
+          <p className="text-xs text-gray-500">Progress: {progress}%</p>
         </CardContent>
       </Card>
 
-      {currentStep === 0 && (
-        <Tabs defaultValue="text" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="text" className="text-xs sm:text-sm">
-              Text Input
-            </TabsTrigger>
-            <TabsTrigger value="pdf" className="text-xs sm:text-sm">
-              PDF Upload
-            </TabsTrigger>
-            <TabsTrigger value="audio" className="text-xs sm:text-sm">
-              Audio Upload
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="text">
-            <Card>
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-lg sm:text-xl">
-                  Enter Your Content
-                </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
-                  Paste your text, notes, or topic description to generate
-                  visual content.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                <textarea
-                  className="w-full h-48 sm:h-64 p-3 sm:p-4 text-sm sm:text-base border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your text content here... For example: 'Explain the concept of machine learning algorithms including supervised, unsupervised, and reinforcement learning with examples.'"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
+      <Tabs defaultValue="text" className="space-y-4">
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="text">Text</TabsTrigger>
+          <TabsTrigger value="pdf">PDF</TabsTrigger>
+          <TabsTrigger value="audio">Audio</TabsTrigger>
+        </TabsList>
+        <TabsContent value="text">
+          <Card>
+            <CardHeader>
+              <CardTitle>Text Input</CardTitle>
+              <CardDescription>Paste or type your content.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <textarea
+                className="w-full h-48 p-3 border rounded"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Explain neural networks..."
+              />
+              <Button
+                onClick={handleTextSubmit}
+                disabled={loading || !content.trim()}
+                className="w-full"
+              >
+                {loading ? "Processing..." : "Generate"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="pdf">
+          <Card>
+            <CardHeader>
+              <CardTitle>PDF Upload</CardTitle>
+              <CardDescription>
+                Upload a PDF (sent to Cloudinary)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="border-2 border-dashed p-4 text-center rounded">
+                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-xs text-gray-600 mb-2">Select a PDF</p>
+                <input
+                  id="pdf-file"
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
                 />
-                <Button
-                  onClick={handleTextSubmit}
-                  disabled={loading || !content.trim()}
-                  className="w-full text-sm sm:text-base py-2 sm:py-3"
-                >
-                  {loading ? "Processing..." : "Generate Visual Content"}
-                  <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <label htmlFor="pdf-file">Choose PDF</label>
                 </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pdf">
-            <Card>
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-lg sm:text-xl">PDF Upload</CardTitle>
-                <CardDescription className="text-sm sm:text-base">
-                  Upload a PDF document; it will be sent to Cloudinary then
-                  processed.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 mb-2">
-                    Drag & drop or click to select a PDF
+                {pdfFile && (
+                  <p className="mt-2 text-[10px] text-blue-600">
+                    {pdfFile.name}
                   </p>
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    id="pdf-file"
-                    className="hidden"
-                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                  />
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <label
-                      htmlFor="pdf-file"
-                      className="cursor-pointer w-full h-full flex items-center justify-center"
-                    >
-                      Select PDF
-                    </label>
-                  </Button>
-                  {pdfFile && (
-                    <p className="mt-2 text-xs text-blue-600">
-                      Selected: {pdfFile.name}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  onClick={handlePdfSubmit}
-                  disabled={loading || !pdfFile}
-                  className="w-full text-sm sm:text-base py-2 sm:py-3"
-                >
-                  {loading ? "Uploading & Processing..." : "Process PDF"}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="audio">
-            <Card>
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-lg sm:text-xl">
-                  Audio Upload
-                </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
-                  Upload an audio file (mp3/wav/m4a) to generate a video.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 mb-2">
-                    Drag & drop or click to select audio
-                  </p>
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    id="audio-file"
-                    className="hidden"
-                    onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                  />
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <label
-                      htmlFor="audio-file"
-                      className="cursor-pointer w-full h-full flex items-center justify-center"
-                    >
-                      Select Audio
-                    </label>
-                  </Button>
-                  {audioFile && (
-                    <p className="mt-2 text-xs text-blue-600">
-                      Selected: {audioFile.name}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  onClick={handleAudioSubmit}
-                  disabled={loading || !audioFile}
-                  className="w-full text-sm sm:text-base py-2 sm:py-3"
-                >
-                  {loading ? "Uploading & Processing..." : "Process Audio"}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
-
-      {currentStep === 1 && (
-        <Card>
-          <CardHeader className="px-4 sm:px-6">
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <Wand2 className="h-4 w-4 sm:h-5 sm:w-5" />
-              Content Summary & Outline
-            </CardTitle>
-            <CardDescription className="text-sm sm:text-base">
-              AI has analyzed your content and created a structured outline.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-            <div className="p-3 sm:p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">
-                Generated Summary
-              </h3>
-              <p className="text-blue-800 text-xs sm:text-sm">
-                This content covers machine learning fundamentals including
-                three main types of algorithms: supervised learning (with
-                labeled data), unsupervised learning (pattern finding), and
-                reinforcement learning (reward-based learning).
-              </p>
-            </div>
-
-            <div className="space-y-2 sm:space-y-3">
-              <h3 className="font-semibold text-sm sm:text-base">
-                Content Outline
-              </h3>
-              <div className="space-y-2">
-                {[
-                  "Introduction to Machine Learning",
-                  "Supervised Learning Algorithms",
-                  "Unsupervised Learning Techniques",
-                  "Reinforcement Learning Concepts",
-                  "Real-world Examples & Applications",
-                ].map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 sm:gap-3 p-2 border rounded"
-                  >
-                    <Badge variant="secondary" className="text-xs">
-                      {index + 1}
-                    </Badge>
-                    <span className="text-xs sm:text-sm">{item}</span>
-                  </div>
-                ))}
+                )}
               </div>
-            </div>
-
-            <Button
-              onClick={generateContent}
-              className="w-full text-sm sm:text-base py-2 sm:py-3"
-              disabled={loading}
-            >
-              {loading ? "Creating Storyboard..." : "Create Storyboard"}
-              <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              <Button
+                onClick={handlePdfSubmit}
+                disabled={loading || !pdfFile}
+                className="w-full"
+              >
+                {loading ? "Uploading..." : "Process PDF"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="audio">
+          <Card>
+            <CardHeader>
+              <CardTitle>Audio Upload / Record</CardTitle>
+              <CardDescription>
+                Upload an audio file or record now.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed p-4 rounded">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Upload className="h-8 w-8 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium">Upload Audio</p>
+                      <p className="text-[11px] text-gray-500">
+                        MP3 / WAV / M4A
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <input
+                      id="audio-file"
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setAudioFile(f);
+                        if (f) setRecordedAudioUrl("");
+                      }}
+                    />
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      disabled={isRecording}
+                    >
+                      <label htmlFor="audio-file">Choose</label>
+                    </Button>
+                  </div>
+                </div>
+                {audioFile && !recordedAudioUrl && (
+                  <p className="mt-2 text-[11px] text-blue-600">
+                    {audioFile.name}
+                  </p>
+                )}
+              </div>
+              <div className="border p-4 rounded bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Mic className="h-4 w-4" /> Record
+                  </p>
+                  <span className="text-xs font-mono px-2 py-1 rounded bg-white border">
+                    {isRecording ? formatTime(recordSeconds) : "00:00"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {!isRecording && (
+                    <Button size="sm" onClick={startRecording}>
+                      <Mic className="h-4 w-4 mr-1" />
+                      Start
+                    </Button>
+                  )}
+                  {isRecording && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={stopRecording}
+                    >
+                      <Square className="h-4 w-4 mr-1" />
+                      Stop
+                    </Button>
+                  )}
+                  {recordedAudioUrl && (
+                    <>
+                      <Button size="sm" variant="outline">
+                        <Play className="h-4 w-4 mr-1" />
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={discardRecording}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Discard
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {isRecording && (
+                  <p className="mt-2 text-[11px] text-red-600 animate-pulse">
+                    Recording...
+                  </p>
+                )}
+                {recordedAudioUrl && (
+                  <audio
+                    controls
+                    src={recordedAudioUrl}
+                    className="w-full mt-3"
+                  />
+                )}
+              </div>
+              <Button
+                onClick={handleAudioSubmit}
+                disabled={loading || !audioFile}
+                className="w-full"
+              >
+                {loading
+                  ? "Uploading..."
+                  : recordedAudioUrl
+                  ? "Process Recording"
+                  : "Process Audio"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {videoUrl && (
         <Card>
-          <CardHeader className="px-4 sm:px-6">
-            <CardTitle className="text-lg sm:text-xl">
-              Generated Video
-            </CardTitle>
-            <CardDescription className="text-sm sm:text-base">
-              Preview and download your AI generated video.
-            </CardDescription>
+          <CardHeader>
+            <CardTitle>Generated Video</CardTitle>
+            <CardDescription>Preview & download.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 px-4 sm:px-6">
-            <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
+          <CardContent className="space-y-4">
+            <div className="aspect-video w-full bg-black rounded overflow-hidden">
               <video
                 src={videoUrl}
                 controls
@@ -493,25 +547,92 @@ export function VisualGenerator() {
                 rel="noopener noreferrer"
                 className="flex-1"
               >
-                <Button className="w-full text-sm sm:text-base py-2 sm:py-3">
-                  Download Video
-                </Button>
+                <Button className="w-full">Download</Button>
               </a>
               <Button
                 variant="outline"
                 onClick={() => {
                   setVideoUrl("");
-                  setCurrentStep(0);
                   setProgress(20);
                 }}
-                className="text-sm sm:text-base py-2 sm:py-3"
               >
-                Generate Another
+                New
               </Button>
             </div>
+            {user ? (
+              <p className="text-xs text-gray-500">
+                Saved to history {saving && "(saving...)"}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">Login to save history</p>
+            )}
           </CardContent>
         </Card>
       )}
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <History className="h-5 w-5 text-blue-600" />
+          <h2 className="text-lg font-semibold">Video History</h2>
+        </div>
+        {!user && (
+          <p className="text-xs text-gray-500">Login to view history</p>
+        )}
+        {user && historyVideos.length === 0 && (
+          <p className="text-xs text-gray-500">No videos yet.</p>
+        )}
+        {user && historyVideos.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {historyVideos.map((v) => (
+              <div key={v.id} className="border rounded p-3 bg-white space-y-2">
+                <div className="aspect-video bg-black/80 rounded overflow-hidden">
+                  <video
+                    src={v.videoUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Badge variant="secondary" className="text-[10px] uppercase">
+                    {v.sourceType}
+                  </Badge>
+                  {v.createdAt?.seconds && (
+                    <span className="text-[10px] text-gray-500">
+                      {new Date(
+                        v.createdAt.seconds * 1000
+                      ).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-700 line-clamp-2">
+                  {v.inputSample || v.sourceFileName || "(no sample)"}
+                </p>
+                <div className="flex gap-2">
+                  <a
+                    href={v.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1"
+                  >
+                    <Button size="sm" className="w-full text-xs">
+                      Open
+                    </Button>
+                  </a>
+                  <a href={v.videoUrl} download className="flex-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs"
+                    >
+                      Download
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

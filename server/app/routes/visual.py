@@ -17,7 +17,6 @@ from ..utils.visual_utils import (
   extract_text_from_pdf_url,
   extract_text_from_audio_url,
 )
-from ..utils.cloudinary_utils import upload_video_to_cloudinary
 
 
 visual_bp = Blueprint("visual", __name__)
@@ -38,8 +37,7 @@ def text_to_video():
   if not text:
     return jsonify({"error": "'text' is required"}), 400
   try:
-    outfile = generate_video_from_transcript_text(text)
-    url = upload_video_to_cloudinary(outfile)
+    url = generate_video_from_transcript_text(text, upload=True)
     return jsonify({"url": url})
   except NotImplementedError as nie:
     return jsonify({"error": str(nie)}), 501
@@ -63,8 +61,7 @@ def pdf_url_to_video():
     return jsonify({"error": "'pdf_url' is required"}), 400
   try:
     text = extract_text_from_pdf_url(pdf_url)
-    outfile = generate_video_from_transcript_text(text)
-    url = upload_video_to_cloudinary(outfile)
+    url = generate_video_from_transcript_text(text, upload=True)
     return jsonify({"url": url})
   except Exception as e:
     return jsonify({"error": str(e)}), 500
@@ -91,8 +88,7 @@ def audio_url_to_video():
       transcript = extract_text_from_audio_url(audio_url)
       if not transcript:
         return jsonify({"error": "Transcription produced empty text"}), 422
-    outfile = generate_video_from_transcript_text(transcript)
-    url = upload_video_to_cloudinary(outfile)
+    url = generate_video_from_transcript_text(transcript, upload=True)
     return jsonify({"url": url})
   except Exception as e:
     return jsonify({"error": str(e)}), 500

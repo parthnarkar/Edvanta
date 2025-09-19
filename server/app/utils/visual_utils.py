@@ -59,6 +59,7 @@ except Exception:  # pragma: no cover - optional
     genai = None
     genai_types = None
 from app.config import Config
+from .cloudinary_utils import upload_video_to_cloudinary
 
 
 # Canvas size (16:9)
@@ -101,17 +102,42 @@ _GENAI_IMAGE_CLIENT = None
 
 def _ensure_google_credentials() -> None:
     """Materialize GOOGLE_APPLICATION_CREDENTIALS from base64 env, if provided."""
-    credentials_base64 = Config.VERTEX_DEFAULT_CREDENTIALS
-    if not credentials_base64:
+    # If already set and file exists, do nothing
+    existing = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if existing and os.path.exists(existing):
         return
-    key_file_path = os.path.join(tempfile.gettempdir(), "gcloud_key.json")
+
+    raw = Config.VERTEX_DEFAULT_CREDENTIALS
+    if not raw:
+        return  # Nothing to materialize
+
+    # Allow either base64-encoded JSON or the literal JSON string
+    service_account_json = None
+    candidate = raw.strip().strip('"').strip("'")
     try:
-        with open(key_file_path, "w") as f:
-            f.write(base64.b64decode(credentials_base64).decode("utf-8"))
-        
-        key_file_path = Config.VERTEX_DEFAULT_CREDENTIALS
-    except Exception:
-        pass
+        if candidate.startswith("{"):
+            # Literal JSON
+            json.loads(candidate)  # validate
+            service_account_json = candidate
+        else:
+            decoded = base64.b64decode(candidate).decode("utf-8")
+            json.loads(decoded)  # validate
+            service_account_json = decoded
+    except Exception as e:  # pragma: no cover - best effort
+        print(f"[warn] Failed to decode GOOGLE_CREDENTIALS_JSON_BASE64: {e}")
+        return
+
+    try:
+        # Stable file name derived from hash to avoid rewriting unnecessarily
+        import hashlib
+        digest = hashlib.sha1(service_account_json.encode("utf-8")).hexdigest()[:10]
+        key_file_path = os.path.join(tempfile.gettempdir(), f"gcp_key_{digest}.json")
+        if not os.path.exists(key_file_path):
+            with open(key_file_path, "w") as f:
+                f.write(service_account_json)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_file_path
+    except Exception as e:  # pragma: no cover
+        print(f"[warn] Could not write service account file: {e}")
 
 
 def _get_project_and_location(for_images: bool = False) -> tuple[str, str]:
@@ -369,13 +395,14 @@ def _cleanup_temp_files(files: List[str]) -> None:
             pass
 
 
-def generate_video_from_transcript_text(transcript_text: str) -> str:
+def generate_video_from_transcript_text(transcript_text: str, upload: bool = True) -> str:
     """Generate a single video by:
     - Summarizing the input into a concise script
     - Splitting the summarized script into sentences
     - Generating 1 image prompt per sentence via LLM
     - Creating a clip per sentence (images + TTS + captions)
     - Concatenating all clips in order
+    - Optionally uploading the final MP4 to Cloudinary and returning the secure URL
     """
     summarized = _summarize_text_for_video(transcript_text)
     sentences = _split_into_sentences(summarized)
@@ -416,7 +443,18 @@ def generate_video_from_transcript_text(transcript_text: str) -> str:
         outfile = os.path.join(outdir, "ai_sentences_compiled.mp4")
         final_video.write_videofile(outfile, fps=24, codec="libx264", audio_codec="aac")
         final_video.close()
-        return outfile
+        if upload:
+            try:
+                url = upload_video_to_cloudinary(outfile)
+                return url
+            finally:
+                # Remove local video after upload attempt
+                try:
+                    if os.path.exists(outfile):
+                        os.remove(outfile)
+                except Exception:
+                    pass
+        return outfile  # Return local path if upload disabled
     finally:
         _cleanup_temp_files(temp_files)
         for c in clips:
