@@ -61,4 +61,21 @@ describe("APIClient", () => {
     expect(result.error.type).toBe(ErrorTypes.VALIDATION_ERROR);
     expect(result.error.message).toBe("Topic is required");
   });
+
+  it("appends query parameters correctly in delete requests", async () => {
+    const client = new APIClient("http://localhost:5000");
+    let calledUrl = "";
+    let calledOptions = null;
+
+    client.call = async (url, options) => {
+      calledUrl = url;
+      calledOptions = options;
+      return { success: true };
+    };
+
+    await client.delete("/api/quiz-history", { user_email: "test@example.com" });
+    expect(calledUrl).toBe("/api/quiz-history?user_email=test%40example.com");
+    expect(calledOptions.method).toBe("DELETE");
+  });
 });
+

@@ -6,6 +6,7 @@
  * Works in all environments: development, production, Vercel, Netlify, etc.
  */
 
+import { useState, useCallback } from 'react';
 import backEndURL from '../hooks/helper';
 import { auth } from './firebase';
 
@@ -260,8 +261,15 @@ export class APIClient {
     });
   }
 
-  async delete(endpoint) {
-    return this.call(endpoint, {
+  async delete(endpoint, params = {}) {
+    const url = new URL(`${this.baseURL}${endpoint}`);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        url.searchParams.append(key, value);
+      }
+    });
+
+    return this.call(url.pathname + url.search, {
       method: 'DELETE',
     });
   }
@@ -309,8 +317,8 @@ export const edvantaAPI = {
     return api.post('/api/tools/quizzes', { ...quizData, user_email: userEmail });
   },
 
-  deleteQuiz(quizId) {
-    return api.delete(`/api/tools/quizzes/${quizId}`);
+  deleteQuiz(quizId, userEmail = null) {
+    return api.delete(`/api/tools/quizzes/${quizId}`, userEmail ? { user_email: userEmail } : {});
   },
 
   submitQuiz(quizId, answers) {
@@ -378,8 +386,8 @@ export const edvantaAPI = {
     return api.get('/api/resume/history', { user_email: userEmail });
   },
 
-  deleteResume(id) {
-    return api.delete(`/api/resume/history/${id}`);
+  deleteResume(id, userEmail = null) {
+    return api.delete(`/api/resume/history/${id}`, userEmail ? { user_email: userEmail } : {});
   },
 
   // Videos (YouTube search proxy)
@@ -420,18 +428,50 @@ export const handleAPIError = (error, fallbackMessage = 'Something went wrong') 
   }
 };
 
-// Loading state hook for API calls
-// Note: This should be used in React components where useState and useCallback are available
-// Example usage:
-// import { useState, useCallback } from 'react';
-// const { loading, error, execute, setError } = useAPICall();
-export const createAPICallHook = () => {
-  // This is a factory function that returns a hook
-  // Use it like: const useMyAPICall = createAPICallHook(false);
-  return () => {
-    // React hooks should be imported in the component using this
-    throw new Error('Please import useState and useCallback from React and create your own hook');
-  };
+/**
+ * Production-ready React hook for executing API calls with loading, error, and data state.
+ * @param {Function} apiFn - Async API function returning a promise
+ * @returns {{ loading: boolean, error: any, data: any, execute: Function, setError: Function, setData: Function }}
+ */
+export function useAPICall(apiFn) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
+
+  const execute = useCallback(
+    async (...args) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiFn(...args);
+        if (response && response.success) {
+          setData(response.data);
+          return response;
+        } else {
+          const err = response?.error?.message || response?.error || 'API call failed';
+          setError(err);
+          return response;
+        }
+      } catch (err) {
+        setError(err.message || 'Network request failed');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiFn]
+  );
+
+  return { loading, error, data, execute, setError, setData };
+}
+
+/**
+ * Factory function creating a customized API call hook.
+ * @param {Function} apiFn
+ * @returns {Function} Hook function
+ */
+export const createAPICallHook = (apiFn) => {
+  return () => useAPICall(apiFn);
 };
 
 export default edvantaAPI;

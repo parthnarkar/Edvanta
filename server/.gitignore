@@ -58,3 +58,6 @@ public/build/
 *.bak
 *.orig
 .pytest_cache/
+.coverage
+coverage.xml
+htmlcov/

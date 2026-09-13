@@ -7,21 +7,26 @@ from app.middleware.auth import require_auth, verify_user_ownership
 user_stats_bp = Blueprint('user_stats', __name__)
 
 # MongoDB connection - GRACEFUL ERROR HANDLING
-try:
-    client, db, _ = connect_to_mongodb()
-    if db is not None:
-        quiz_history_collection = db[Config.MONGODB_QUIZ_HISTORY_COLLECTION]
-        roadmaps_collection = db[Config.MONGODB_ROADMAP_COLLECTION]
-        print(f"MongoDB connected successfully to {Config.MONGODB_DB_NAME}")
-    else:
-        raise Exception("Database connection failed")
-except Exception as e:
-    print(f"MongoDB connection failed: {str(e)}")
-    # Set to None to handle gracefully in routes
-    client = None
-    db = None
-    quiz_history_collection = None
-    roadmaps_collection = None
+client = None
+db = None
+quiz_history_collection = None
+roadmaps_collection = None
+
+def get_collections():
+    """Retrieve collections dynamically with reconnection support."""
+    global client, db, quiz_history_collection, roadmaps_collection
+    if db is None or quiz_history_collection is None or roadmaps_collection is None:
+        try:
+            client, db, _ = connect_to_mongodb()
+            if db is not None:
+                quiz_history_collection = db[Config.MONGODB_QUIZ_HISTORY_COLLECTION]
+                roadmaps_collection = db[Config.MONGODB_ROADMAP_COLLECTION]
+        except Exception as e:
+            print(f"MongoDB connection failed: {str(e)}")
+    return db, quiz_history_collection, roadmaps_collection
+
+# Attempt initial connection
+get_collections()
 
 
 @user_stats_bp.route("/api/user-stats", methods=["GET"])
@@ -37,9 +42,9 @@ def get_user_stats():
         if not verify_user_ownership(user_email):
             return jsonify({"error": "Forbidden: Access denied to requested user data", "code": "FORBIDDEN"}), 403
 
-        
         # Check if MongoDB is available
-        if db is None or quiz_history_collection is None or roadmaps_collection is None:
+        db_conn, q_col, r_col = get_collections()
+        if db_conn is None or q_col is None or r_col is None:
             return jsonify({
                 "error": "Database not available",
                 "total_learning_minutes": 0,
@@ -59,7 +64,8 @@ def get_user_stats():
         quizzes_made_count = 0
         
         # 1. Get Active Roadmaps Count
-        active_roadmaps_count = roadmaps_collection.count_documents({"user_email": user_email})
+        active_roadmaps_count = r_col.count_documents({"user_email": user_email})
+
         
         # 2. Get Skills Learning (Total unique skills from all roadmaps)
         skills_pipeline = [
@@ -83,11 +89,11 @@ def get_user_stats():
             {"$count": "unique_skills_count"}
         ]
         
-        skills_result = list(roadmaps_collection.aggregate(skills_pipeline))
+        skills_result = list(r_col.aggregate(skills_pipeline))
         unique_skills_count = skills_result[0].get("unique_skills_count", 0) if skills_result else 0
         
         # 3. Get Quizzes Made Count
-        quizzes_made_count = quiz_history_collection.count_documents({"user_email": user_email})
+        quizzes_made_count = q_col.count_documents({"user_email": user_email})
         
         # Calculate realistic learning time based on actual activity
         # 12 minutes per quiz (average time to complete + review)
@@ -127,13 +133,14 @@ def get_user_stats():
 @user_stats_bp.route("/api/user-stats/test", methods=["GET"])
 def test_user_stats():
     """Test endpoint to verify user-stats routes are working"""
+    db_conn, q_col, r_col = get_collections()
     return jsonify({
         "status": "ok",
         "message": "User stats routes are working",
-        "mongodb_available": db is not None,
+        "mongodb_available": db_conn is not None,
         "collections_available": {
-            "quiz_history": quiz_history_collection is not None,
-            "roadmaps": roadmaps_collection is not None
+            "quiz_history": q_col is not None,
+            "roadmaps": r_col is not None
         }
     }), 200
 
@@ -157,16 +164,17 @@ def debug_user_stats():
         if not user_email:
             return jsonify({"error": "user_email parameter is required"}), 400
         
-        if quiz_history_collection is None or roadmaps_collection is None:
+        db_conn, q_col, r_col = get_collections()
+        if q_col is None or r_col is None:
             return jsonify({"error": "Database connection not available"}), 500
         
         # Check roadmaps data
-        roadmap_sample = roadmaps_collection.find_one({"user_email": user_email})
-        roadmap_count = roadmaps_collection.count_documents({"user_email": user_email})
+        roadmap_sample = r_col.find_one({"user_email": user_email})
+        roadmap_count = r_col.count_documents({"user_email": user_email})
         
         # Check quiz data  
-        quiz_sample = quiz_history_collection.find_one({"user_email": user_email})
-        quiz_count = quiz_history_collection.count_documents({"user_email": user_email})
+        quiz_sample = q_col.find_one({"user_email": user_email})
+        quiz_count = q_col.count_documents({"user_email": user_email})
         
         # Get sample skill structure from roadmap
         sample_skills = []

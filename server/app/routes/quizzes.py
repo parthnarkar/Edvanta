@@ -13,22 +13,28 @@ from app.middleware.auth import require_auth, verify_user_ownership
 
 quizzes_bp = Blueprint("quizzes", __name__)
 
-# MongoDB connection - GRACEFUL ERROR HANDLING
-try:
-    client, db, collection_name = connect_to_mongodb('MONGODB_QUIZ_COLLECTION')
-    if db is not None:
-        quizzes_collection = db[collection_name]
-        quiz_history_collection = db[Config.MONGODB_QUIZ_HISTORY_COLLECTION]
-        print(f"Quiz MongoDB connected successfully to {Config.MONGODB_DB_NAME}")
-    else:
-        raise Exception("Database connection failed")
-except Exception as e:
-    print(f"Quiz MongoDB connection failed: {str(e)}")
-    # Set to None to handle gracefully in routes
-    client = None
-    db = None
-    quizzes_collection = None
-    quiz_history_collection = None
+# MongoDB connection - GRACEFUL ERROR HANDLING WITH RECONNECTION SUPPORT
+client = None
+db = None
+quizzes_collection = None
+quiz_history_collection = None
+
+def get_collections():
+    """Retrieve collections dynamically with reconnection support."""
+    global client, db, quizzes_collection, quiz_history_collection
+    if db is None or quizzes_collection is None or quiz_history_collection is None:
+        try:
+            client, db, collection_name = connect_to_mongodb('MONGODB_QUIZ_COLLECTION')
+            if db is not None and collection_name:
+                quizzes_collection = db[collection_name]
+                quiz_history_collection = db[Config.MONGODB_QUIZ_HISTORY_COLLECTION]
+        except Exception as e:
+            print(f"Quiz MongoDB connection failed: {str(e)}")
+    return db, quizzes_collection, quiz_history_collection
+
+# Attempt initial connection
+get_collections()
+
 
 
 @quizzes_bp.route("/api/quizzes/generate", methods=["POST"])
@@ -92,7 +98,11 @@ def manage_quizzes():
                 return jsonify({"error": "Forbidden: Access denied to requested user data", "code": "FORBIDDEN"}), 403
             
             # Fetch quizzes for the specific user from MongoDB
-            quizzes_cursor = quizzes_collection.find({"created_by": user_email})
+            _, q_col, _ = get_collections()
+            if q_col is None:
+                return jsonify([])
+
+            quizzes_cursor = q_col.find({"created_by": user_email})
             formatted_quizzes = []
             
             for quiz in quizzes_cursor:
@@ -144,7 +154,11 @@ def manage_quizzes():
             }
             
             # Insert into MongoDB
-            result = quizzes_collection.insert_one(quiz_entry)
+            _, q_col, _ = get_collections()
+            if q_col is None:
+                return jsonify({"error": "Database not available"}), 503
+
+            result = q_col.insert_one(quiz_entry)
             
             return jsonify({
                 "message": "Quiz saved successfully",
@@ -168,8 +182,16 @@ def delete_quiz(quiz_id):
         if user_email and not verify_user_ownership(user_email):
             return jsonify({"error": "Forbidden: Access denied to requested user data", "code": "FORBIDDEN"}), 403
 
-        # Delete from MongoDB using the custom UUID field
-        result = quizzes_collection.delete_one({"id": quiz_id})
+        _, q_col, _ = get_collections()
+        if q_col is None:
+            return jsonify({"error": "Database not available"}), 503
+
+        # Delete from MongoDB using the custom UUID field and ensure ownership
+        delete_query = {"id": quiz_id}
+        if user_email:
+            delete_query["created_by"] = user_email
+
+        result = q_col.delete_one(delete_query)
         
         if result.deleted_count == 0:
             return jsonify({"error": "Quiz not found"}), 404
@@ -201,7 +223,11 @@ def submit_quiz():
         answers = data.get("answers", [])
         
         # Find the quiz in MongoDB
-        quiz = quizzes_collection.find_one({"id": quiz_id})
+        _, q_col, _ = get_collections()
+        if q_col is None:
+            return jsonify({"error": "Database not available"}), 503
+
+        quiz = q_col.find_one({"id": quiz_id})
         
         if not quiz:
             return jsonify({"error": "Quiz not found"}), 404
@@ -260,7 +286,11 @@ def quiz_history_endpoint():
             if not verify_user_ownership(user_email):
                 return jsonify({"error": "Forbidden: Access denied to requested user data", "code": "FORBIDDEN"}), 403
             
-            history_cursor = quiz_history_collection.find({"user_email": user_email}).sort("completedAt", -1)
+            _, _, qh_col = get_collections()
+            if qh_col is None:
+                return jsonify([])
+
+            history_cursor = qh_col.find({"user_email": user_email}).sort("completedAt", -1)
             history_list = []
             
             for entry in history_cursor:
@@ -301,7 +331,11 @@ def quiz_history_endpoint():
             }
 
             # Insert into MongoDB
-            result = quiz_history_collection.insert_one(history_entry)
+            _, _, qh_col = get_collections()
+            if qh_col is None:
+                return jsonify({"error": "Database not available"}), 503
+
+            result = qh_col.insert_one(history_entry)
 
             return jsonify({
                 "message": "Quiz history logged successfully", 
@@ -323,7 +357,11 @@ def quiz_history_endpoint():
             if not verify_user_ownership(user_email):
                 return jsonify({"error": "Forbidden: Access denied to requested user data", "code": "FORBIDDEN"}), 403
             
-            result = quiz_history_collection.delete_many({"user_email": user_email})
+            _, _, qh_col = get_collections()
+            if qh_col is None:
+                return jsonify({"error": "Database not available"}), 503
+
+            result = qh_col.delete_many({"user_email": user_email})
             
             return jsonify({
                 "message": f"Quiz history cleared successfully for user {user_email}",

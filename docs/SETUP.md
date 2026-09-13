@@ -85,7 +85,8 @@ npm run test:watch  # Watch mode
 ### Backend Tests:
 ```bash
 cd server
-pytest
+pytest                                          # Run all 63 unit and integration tests
+pytest --cov=app --cov-report=term-missing tests/ # Run with coverage report
 ```
 
 ---

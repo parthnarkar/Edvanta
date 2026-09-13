@@ -20,12 +20,26 @@ def create_quiz(topic: str, difficulty: str = "medium", num_questions: int = 10)
                 "questions": []
             }
             
-            for i, question in enumerate(result['questions'], 1):
+            for i, question in enumerate(result.get('questions', []), 1):
+                options = question.get("options", [])
+                correct_ans = question.get("correct_answer", 0)
+                try:
+                    correct_idx = int(correct_ans)
+                except (ValueError, TypeError):
+                    correct_idx = 0
+
+                if options and 0 <= correct_idx < len(options):
+                    correct_val = options[correct_idx]
+                elif options:
+                    correct_val = options[0]
+                else:
+                    correct_val = ""
+
                 quiz_data["questions"].append({
                     "id": i,
                     "question": question.get("question", ""),
-                    "options": question.get("options", []),
-                    "correctAnswer": question["options"][question["correct_answer"]] if question.get("correct_answer", 0) < len(question.get("options", [])) else question.get("options", [""])[0]
+                    "options": options,
+                    "correctAnswer": correct_val
                 })
             
             return quiz_data

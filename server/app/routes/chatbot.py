@@ -501,22 +501,7 @@ def ask_question():
         ai_response = get_ai_response(question, context, chat_history)
 
         if not ai_response:
-            ai_response = f"""I understand you're asking about "{question}". Let me help you with this topic.
-
-This appears to be an important concept that requires careful explanation. Here's how I would approach this:
-
-**Key Points to Consider:**
-1. Understanding the fundamental principles
-2. Breaking down the problem step by step
-3. Applying the concepts practically
-4. Common mistakes to avoid
-
-**Suggested Approach:**
-- Start with the basics and build up your understanding
-- Practice with simpler examples first
-- Ask follow-up questions if anything is unclear
-
-Would you like me to elaborate on any specific aspect of this topic?"""
+            return jsonify({"error": "Failed to generate AI response. Please try again."}), 503
 
         # Transform response back to legacy format
         legacy_response = {

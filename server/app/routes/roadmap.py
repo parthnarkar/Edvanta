@@ -141,7 +141,7 @@ def get_user_roadmaps():
                 if "updated_at" in r_copy and isinstance(r_copy["updated_at"], datetime):
                     r_copy["updated_at"] = r_copy["updated_at"].isoformat()
                 user_roadmaps.append(r_copy)
-            return jsonify(user_roadmaps)
+        return jsonify(user_roadmaps)
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve roadmaps: {str(e)}"}), 500
 

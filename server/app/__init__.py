@@ -96,6 +96,7 @@ def create_app() -> Flask:
             # Continue with other blueprints instead of returning early
 
     @app.route("/", methods=["GET"])
+    @app.route("/api/health", methods=["GET"])
     def health():
         """Health check endpoint with environment info."""
         from .config import Config
@@ -187,10 +188,6 @@ def create_app() -> Flask:
           present (to allow credentials) and fall back to '*' otherwise.
         - Otherwise only echo allowed origins.
         """
-        # Log response in debug mode
-        if app.config.get('DEBUG'):
-            return response
-
         origin = request.headers.get("Origin")
         allowed = Config.ALLOWED_ORIGINS
 
@@ -202,10 +199,12 @@ def create_app() -> Flask:
         except Exception:
             allowed_list = ["http://localhost:5173"]
 
-        if origin and origin in allowed_list:
+        if origin and ("*" in allowed_list or origin in allowed_list):
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Vary"] = "Origin"
             response.headers["Access-Control-Allow-Credentials"] = "true"
+        elif "*" in allowed_list:
+            response.headers["Access-Control-Allow-Origin"] = "*"
 
         # Common preflight and CORS headers
         response.headers.setdefault(

@@ -98,37 +98,55 @@ The server auto-detects the environment and configures itself automatically.
 ```
 server/
 ├── app.py                   # Local development entry point
-├── requirements.txt         # Dependencies (Vercel optimized <250MB)
-├── runtime.txt             # Python version specification
-├── vercel.json             # Vercel serverless configuration
-├── .env.example            # Environment variables template
-├── .env                    # Local environment variables (git-ignored)
-├── .gitignore              # Git ignore patterns
-├── README.md               # This documentation
+├── requirements.txt         # Production dependencies (Vercel optimized <250MB)
+├── requirements-dev.txt     # Testing and development dependencies (pytest, cov, mock)
+├── runtime.txt              # Python runtime version
+├── vercel.json              # Vercel serverless configuration
+├── pytest.ini               # Pytest async and discovery configuration
+├── .env.example             # Environment variables template
+├── .env                     # Local environment variables (git-ignored)
+├── .gitignore               # Git ignore patterns
+├── README.md                # This documentation
 ├── api/
-│   └── index.py            # Vercel WSGI entry point
-└── app/
-    ├── __init__.py         # Application factory with auto-detection
-    ├── config.py           # Universal configuration management
-    ├── routes/
-    │   ├── __init__.py
-    │   ├── chatbot.py      # AI doubt solving chatbot
-    │   ├── quizzes.py      # Quiz generation & scoring system
-    │   ├── tutor.py        # AI tutoring with voice support
-    │   ├── roadmap.py      # Learning roadmap creation
-    │   ├── resume.py       # Resume upload and AI analysis
-    │   └── user_stats.py   # User statistics & progress tracking
-    └── utils/
-        ├── __init__.py
-        ├── ai_utils.py     # Gemini AI integration
-        ├── mongo_utils.py   # MongoDB helper functions
-        └── quizzes_utils.py # Quiz processing helpers
+│   └── index.py             # Vercel WSGI entry point
+├── app/
+│   ├── __init__.py          # Application factory, CORS handling & health checks
+│   ├── config.py            # Universal configuration management
+│   ├── middleware/          # Security & request validation
+│   │   ├── auth.py          # Firebase token & user authentication decorator
+│   │   └── validation.py    # Request schema and query parameter validators
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── chatbot.py       # AI doubt solving chatbot
+│   │   ├── quizzes.py       # Quiz generation & scoring system
+│   │   ├── tutor.py         # AI tutoring with voice support
+│   │   ├── roadmap.py       # Learning roadmap creation
+│   │   ├── resume.py        # Resume upload, Cloudinary storage & AI analysis
+│   │   ├── user_stats.py    # User statistics & progress tracking
+│   │   └── videos.py        # YouTube educational video search proxy
+│   └── utils/
+│       ├── __init__.py
+│       ├── ai_utils.py      # Gemini AI integration
+│       ├── mongo_utils.py   # MongoDB helper functions & resilient reconnects
+│       └── quizzes_utils.py # Quiz parsing & bounds validation helpers
+└── tests/                   # Pytest test suite (63 automated tests)
+    ├── test_auth.py         # Authentication decorator & header tests
+    ├── test_chatbot.py      # Chatbot message & history tests
+    ├── test_health.py       # Health check & runtime feature tests
+    ├── test_quizzes.py      # Quiz generation, evaluation & IDOR deletion tests
+    ├── test_resume.py       # Resume analysis & history tests
+    ├── test_roadmap.py      # Roadmap generation, milestones & PDF tests
+    ├── test_tutor.py        # AI tutor session & voice tests
+    ├── test_user_stats.py   # User analytics, fallbacks & session tests
+    ├── test_validation.py   # Schema & query parameter validator tests
+    └── test_videos.py       # YouTube search proxy & error handling tests
 ```
 
 ## 🔧 API Endpoints
 
 ### Core Endpoints
-- `GET /` - Health check
+- `GET /` - Health check & environment info
+- `GET /api/health` - Lightweight health status check
 - `GET /api/runtime-features` - Feature availability status
 
 ---
@@ -138,8 +156,9 @@ server/
 This section documents the most commonly used endpoints with request and response examples. Use these as templates for integration and testing. Replace base URL with your deployment (e.g., `https://api.example.com`).
 
 ### Authentication
-- This backend currently does not enforce authentication by default.
-- If you add auth middleware later, pass `Authorization: Bearer <token>` and validate it server-side.
+- The backend enforces authentication via the `@require_auth` decorator ([`app/middleware/auth.py`](file:///d:/_Deployed_Projects_Vercel/edvanta/server/app/middleware/auth.py)).
+- Requests must supply a valid Firebase ID Token in the header: `Authorization: Bearer <token>`.
+- In development and non-production modes, passing `user_email` is accepted as a local fallback.
 
 ### 1) Chat (Send message)
 - Endpoint: `POST /api/chat/message`
@@ -248,10 +267,17 @@ For a complete OpenAPI/Swagger spec: consider adding `openapi.yaml` and serving 
 
 
 ### User Analytics
-- `GET /api/user-stats` - Get user progress statistics
+- `GET /api/user-stats` - Get user progress statistics (`?user_email=...`)
+- `POST /api/user-stats/session` - Record session activity
+- `GET /api/user-stats/test` - Health & calculation verification
 
 ### Resume Analyzer
 - `POST /api/resume/analyze` - Upload resume (PDF/TXT) to Cloudinary and get Gemini AI feedback & analysis
+- `GET /api/resume/history` - List saved resume analyses for a user
+- `DELETE /api/resume/history/<id>` - Delete a specific resume analysis
+
+### Educational Videos
+- `GET /api/videos/search` - Proxy search query to YouTube Data API v3 (`?q=...&max_results=...`)
 
 ---
 
@@ -504,21 +530,20 @@ Example error response:
 
 ## Backend testing instructions
 
-Recommended test stack: `pytest`, `pytest-cov` and `requests` or `httpx` for integration tests.
-
-Example commands (run from `server/`):
+The server has a full test suite built with `pytest` and `pytest-flask`, located in the `tests/` directory:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install pytest pytest-cov
-pytest -q
+# 1. Install development and testing dependencies
+pip install -r requirements-dev.txt
+
+# 2. Run all 63 unit and integration tests
+pytest
+
+# 3. Run tests with code coverage report
+pytest --cov=app --cov-report=term-missing tests/
 ```
 
-Tips:
-- Mock external services (Gemini, MongoDB) using `responses`, `httpretty`, or `mongomock` for unit tests.
-- Provide a `tests/` folder with unit tests for `ai_utils`, `mongo_utils` and route tests using the Flask test client.
+Test coverage includes authentication, chatbot, health routes, quizzes (including IDOR checks), roadmaps, resume analysis, AI tutor, user statistics, schema validation, and video search. External calls to Google Gemini AI and MongoDB are mocked with fixtures for reliable, hermetic test runs.
 
 ## Dependency overview
 

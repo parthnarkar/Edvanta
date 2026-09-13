@@ -131,3 +131,51 @@ def test_submit_quiz_evaluation(mock_col, client):
     assert data["total"] == 1
     assert data["percentage"] == 100
     assert data["feedback"][0]["is_correct"] is True
+
+
+def test_create_quiz_utility_success():
+    """Test quizzes_utils.create_quiz parses AI questions correctly."""
+    from app.utils.quizzes_utils import create_quiz
+
+    mock_ai_result = {
+        "success": True,
+        "questions": [
+            {
+                "question": "What is Python?",
+                "options": ["Snake", "Language", "Car"],
+                "correct_answer": 1
+            },
+            {
+                "question": "What is 1+1?",
+                "options": ["2", "3"],
+                "correct_answer": "0"  # String index
+            }
+        ]
+    }
+
+    with patch("app.utils.quizzes_utils.generate_quiz_content", return_value=mock_ai_result):
+        quiz = create_quiz("Python Basics", "easy", 2)
+        assert quiz["topic"] == "Python Basics"
+        assert len(quiz["questions"]) == 2
+        assert quiz["questions"][0]["correctAnswer"] == "Language"
+        assert quiz["questions"][1]["correctAnswer"] == "2"
+
+
+@patch("app.routes.quizzes.get_collections")
+def test_delete_quiz_with_ownership(mock_get_col, client):
+    """Test deleting a quiz enforces ownership query."""
+    mock_db = MagicMock()
+    mock_q_col = MagicMock()
+    mock_qh_col = MagicMock()
+    mock_get_col.return_value = (mock_db, mock_q_col, mock_qh_col)
+
+    mock_delete_result = MagicMock()
+    mock_delete_result.deleted_count = 1
+    mock_q_col.delete_one.return_value = mock_delete_result
+
+    response = client.delete("/api/tools/quizzes/quiz-123?user_email=test@example.com")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "deleted successfully" in data["message"]
+    mock_q_col.delete_one.assert_called_once_with({"id": "quiz-123", "created_by": "test@example.com"})
+

@@ -130,7 +130,7 @@ export function Roadmap() {
           created_at: roadmap.created_at,
           dateCreated: new Date(roadmap.created_at).toLocaleDateString(),
           data: roadmap.data,
-          skills: roadmap.data.nodes
+          skills: roadmap.data?.nodes
             ? roadmap.data.nodes
                 .filter((node) => node.id !== "start")
                 .slice(0, 3)

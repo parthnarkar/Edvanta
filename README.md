@@ -8,7 +8,7 @@
 A comprehensive full-stack educational platform that revolutionizes learning through artificial intelligence, offering personalized learning tools, beautiful responsive design and seamless deployment across any platform.
 
 <!-- Project badges -->
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](docs/LICENSE) [![Version](https://img.shields.io/badge/version-0.0.0-blue.svg)](client/package.json) [![Deploy](https://img.shields.io/badge/deploy-vercel-brightgreen.svg)](https://vercel.com)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](docs/LICENSE) [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](client/package.json) [![Deploy](https://img.shields.io/badge/deploy-vercel-brightgreen.svg)](https://vercel.com)
 
 ## 🌟 Key Features
 
@@ -84,7 +84,8 @@ edvanta/
 ├── docs/                            # Project documentation (Setup, Contributing, License)
 │   ├── CONTRIBUTING.md              # Rules and guidelines for contributors
 │   ├── LICENSE                      # Open-source license terms
-│   └── SETUP.md                     # Step-by-step developer setup instructions
+│   ├── SETUP.md                     # Step-by-step developer setup instructions
+│   └── VIDEO_DEMO.md                # Video walkthrough script and checklist
 ├── client/                          # React + Vite Frontend Application
 │   ├── src/
 │   │   ├── components/              # Reusable UI components
@@ -110,24 +111,25 @@ edvanta/
 │   │   │       └── ResumeAnalysis.jsx # AI-powered resume analysis
 │   │   ├── hooks/                   # Custom React hooks
 │   │   │   ├── useAuth.js, useResponsive.js, helper.js
-│   │   └── lib/                   # Core utilities
-│   │       ├── api.js               # Centralized API client
+│   │   └── lib/                     # Core utilities & testing
+│   │       ├── api.js               # Centralized API client & useAPICall hook
+│   │       ├── offlineStorage.js    # IndexedDB/localStorage offline sync engine
 │   │       ├── firebase.js          # Firebase configuration
-│   │       └── utils.js             # Helper functions
-│   ├── public/                      # Static assets
-│   │   ├── manifest.json, edvanta-logo.png, default-avatar.svg
+│   │       ├── utils.js             # Helper functions
+│   │       └── *.test.js            # Vitest unit test suites
+│   ├── public/                      # Static assets (manifest.json, icons)
 │   ├── package.json, vite.config.ts, tailwind.config.js
 │   └── .env.example                 # Environment template with full docs
 └── server/                          # Flask Backend API
     ├── api/
     │   └── index.py                 # Vercel WSGI entry point
     ├── app/
-    │   ├── __init__.py              # Application factory
+    │   ├── __init__.py              # Application factory & CORS middleware
     │   ├── config.py                # Environment configuration
-    │   ├── routes/
-    │   │   ├── __init__.py
+    │   ├── middleware/              # Auth & validation decorators
+    │   ├── routes/                  # Modular Blueprint route handlers
     │   │   ├── chatbot.py, quizzes.py, tutor.py
-    │   │   ├── roadmap.py, user_stats.py, resume.py
+    │   │   ├── roadmap.py, user_stats.py, resume.py, videos.py
     │   └── utils/                   # Service integrations
     │       ├── ai_utils.py          # Gemini AI integration
     │       ├── mongo_utils.py, quizzes_utils.py
@@ -258,10 +260,11 @@ See `client/.env.example` for:
 | `POST` | `/api/chat/message` | Send chat message to AI chatbot |
 | `GET` | `/api/chat/loadChat` | Load all chat sessions for a user |
 | `POST` | `/api/chat/createChat` | Create a new chat session |
-| `PUT` | `/api/chat/saveChat` | Save multiple chat sessions for a user |
 | `PUT` | `/api/chat/updateMessages/{session_id}/messages` | Update messages inside a chat session |
 | `DELETE` | `/api/chat/deleteChat/{session_id}` | Delete a chat session |
 | `PATCH` | `/api/chat/updateActivity/{session_id}/activity` | Update the last activity timestamp |
+| `POST` | `/api/chat` | Legacy single-message chatbot fallback endpoint |
+| `GET` | `/api/chat/history/{user_email}` | Legacy chat history retrieval |
 
 ### AI Quizzes
 | Method | Endpoint | Description |
@@ -270,7 +273,7 @@ See `client/.env.example` for:
 | `POST` | `/api/quizzes/submit` | Submit quiz answers for evaluation |
 | `GET` | `/api/tools/quizzes` | List saved quizzes for a user |
 | `POST` | `/api/tools/quizzes` | Save a quiz to database |
-| `DELETE` | `/api/tools/quizzes/{quiz_id}` | Delete a saved quiz by UUID |
+| `DELETE` | `/api/tools/quizzes/{quiz_id}` | Delete a saved quiz with ownership verification |
 | `GET` | `/api/quiz-history` | Get quiz completion history |
 | `POST` | `/api/quiz-history` | Log quiz completion to history |
 | `DELETE` | `/api/quiz-history` | Clear quiz history for a user |
@@ -293,7 +296,7 @@ See `client/.env.example` for:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/roadmap/generate` | Generate roadmap from goal/background |
-| `GET` | `/api/roadmap/user/{user_email}` | Get all roadmaps for a user |
+| `GET` | `/api/roadmap/user` | Get all roadmaps for a user (`?user_email=...`) |
 | `GET` | `/api/roadmap/{roadmap_id}` | Get specific roadmap details |
 | `PUT` | `/api/roadmap/{roadmap_id}` | Update roadmap milestones/progress |
 | `DELETE` | `/api/roadmap/{roadmap_id}` | Delete a roadmap |
@@ -302,35 +305,40 @@ See `client/.env.example` for:
 ### User Analytics
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/user-stats` | Get user progress statistics |
+| `GET` | `/api/user-stats` | Get user progress statistics (`?user_email=...`) |
+| `POST` | `/api/user-stats/session` | Record user session activity |
+| `GET` | `/api/user-stats/test` | User stats health and test endpoint |
 
 ### Resume Analyzer
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/resume/analyze` | Upload resume (PDF/TXT) to Cloudinary and get Gemini AI feedback & analysis |
+| `GET` | `/api/resume/history` | Retrieve user resume analysis history |
+| `DELETE` | `/api/resume/history/{id}` | Delete specific resume analysis record |
 
-### Visual Content (Client-Side Only)
-| Feature | Implementation | Description |
-|---------|----------------|-------------|
-| **YouTube Search** | Client-side API | Search educational videos via YouTube Data API v3 |
-| **Video Preview** | Embedded iframe | Preview videos with modal overlay |
-| **External Links** | Direct navigation | Open videos in YouTube for full experience |
+### Visual Content
+| Method | Endpoint / Implementation | Description |
+|--------|---------------------------|-------------|
+| `GET` | `/api/videos/search` | Backend YouTube search proxy (`?q=...&max_results=...`) |
+| Client | Direct YouTube API v3 | Client-side video search fallback via `VITE_YOUTUBE_API_KEY` |
+| Client | Embedded iframe | Video player modal preview |
 
 ## 🛠️ Technology Stack
 
-<!-- Tech badges (replace versions/links as appropriate) -->
-[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=white)](https://reactjs.org) [![Vite](https://img.shields.io/badge/Vite-6.3.5-646cff?logo=vite&logoColor=white)](https://vitejs.dev) [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1.12-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com) [![Flask](https://img.shields.io/badge/Flask-3.1.1-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com) [![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white)](https://python.org) [![MongoDB](https://img.shields.io/badge/MongoDB-atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
+<!-- Tech badges -->
+[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=white)](https://reactjs.org) [![Vite](https://img.shields.io/badge/Vite-6.4.2-646cff?logo=vite&logoColor=white)](https://vitejs.dev) [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.3.0-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com) [![Flask](https://img.shields.io/badge/Flask-3.1.1-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com) [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)](https://python.org) [![MongoDB](https://img.shields.io/badge/MongoDB-atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)ct-18.3.1-61DAFB?logo=react&logoColor=white)](https://reactjs.org) [![Vite](https://img.shields.io/badge/Vite-6.3.5-646cff?logo=vite&logoColor=white)](https://vitejs.dev) [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1.12-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com) [![Flask](https://img.shields.io/badge/Flask-3.1.1-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com) [![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white)](https://python.org) [![MongoDB](https://img.shields.io/badge/MongoDB-atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
 
 
 ### 🎨 Frontend Stack
 - **React 18.3.1** - Modern React with hooks, Suspense and concurrent features
-- **Vite 6.3.5** - Next-generation frontend build tool with HMR
+- **Vite 6.4.2** - Next-generation frontend build tool with HMR
 - **React Router DOM 7.8.0** - Declarative routing with nested route support
-- **TailwindCSS 4.1.12** - Utility-first CSS framework with JIT compiler
+- **TailwindCSS 4.3.0** - Utility-first CSS framework with Vite plugin
 - **Radix UI Components** - Accessible, unstyled component primitives
 - **Lucide React 0.539.0** - Beautiful, customizable icon library
 - **Firebase 12.1.0** - Authentication and Firestore database
-- **Axios 1.11.0** - Promise-based HTTP client for API communication
+- **Axios 1.11.0** - Promise-based HTTP client with specialized API client
+- **Vitest 4.1.6** - Fast unit and component test runner with happy-dom
 
 ### ⚙️ Backend Stack
 - **Flask 3.1.1** - Lightweight web framework
@@ -430,17 +438,21 @@ See `client/.env.example` for:
 
 ### Frontend (`client/`)
 ```bash
-npm run dev       # Start development server
-npm run build     # Build for production
-npm run test      # Run unit/component tests
-npm run lint      # Run ESLint
+npm run dev          # Start Vite development server (localhost:5173)
+npm run build        # Build production bundle in dist/
+npm run preview      # Preview production build locally
+npm run test         # Run Vitest test suite once
+npm run test:watch   # Run Vitest in interactive watch mode
+npm run lint         # Run ESLint validation
 ```
 
 ### Backend (`server/`)
 ```bash
-python app.py                    # Start development server
-pytest                           # Run backend tests
-pip install -r requirements.txt  # Install dependencies
+python app.py                    # Start Flask development server (localhost:5000)
+pytest                           # Run full Pytest test suite (63 tests)
+pytest --cov=app                 # Run Pytest with test coverage reporting
+pip install -r requirements.txt  # Install production dependencies
+pip install -r requirements-dev.txt # Install development/testing tools
 ```
 
 ## 🚨 Troubleshooting

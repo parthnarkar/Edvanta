@@ -95,3 +95,62 @@ def test_delete_roadmap_success(mock_connect, client):
     assert data["success"] is True
     assert "deleted successfully" in data["message"]
     assert "mock-id-123" not in _in_memory_roadmaps
+
+
+@patch("app.routes.roadmap.connect_to_mongodb", return_value=(None, None, None))
+@patch("app.routes.roadmap.db", None)
+def test_get_user_roadmaps_fallback_empty(mock_connect, client):
+    """Test getting roadmaps when in-memory store is empty returns empty array cleanly."""
+    from app.routes.roadmap import _in_memory_roadmaps
+    _in_memory_roadmaps.clear()
+
+    response = client.get("/api/roadmap/user?user_email=test@example.com")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) == 0
+
+
+@patch("app.routes.roadmap.connect_to_mongodb", return_value=(None, None, None))
+@patch("app.routes.roadmap.db", None)
+def test_get_user_roadmaps_fallback_multiple(mock_connect, client):
+    """Test getting roadmaps when multiple items exist for different users."""
+    from app.routes.roadmap import _in_memory_roadmaps
+    _in_memory_roadmaps.clear()
+    _in_memory_roadmaps["r1"] = {"id": "r1", "user_email": "other@example.com", "title": "Other Roadmap"}
+    _in_memory_roadmaps["r2"] = {"id": "r2", "user_email": "test@example.com", "title": "Test Roadmap 1"}
+    _in_memory_roadmaps["r3"] = {"id": "r3", "user_email": "test@example.com", "title": "Test Roadmap 2"}
+
+    response = client.get("/api/roadmap/user?user_email=test@example.com")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data) == 2
+    titles = [item["title"] for item in data]
+    assert "Test Roadmap 1" in titles
+    assert "Test Roadmap 2" in titles
+    assert "Other Roadmap" not in titles
+
+
+@patch("app.routes.roadmap.connect_to_mongodb", return_value=(None, None, None))
+@patch("app.routes.roadmap.db", None)
+def test_update_roadmap_success(mock_connect, client):
+    """Test updating a roadmap in in-memory fallback."""
+    from app.routes.roadmap import _in_memory_roadmaps
+    _in_memory_roadmaps.clear()
+    _in_memory_roadmaps["r1"] = {
+        "id": "r1",
+        "user_email": "test@example.com",
+        "title": "Old Title",
+        "description": "Old Desc"
+    }
+
+    response = client.put(
+        "/api/roadmap/r1?user_email=test@example.com",
+        json={"title": "New Title", "description": "New Desc"}
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["success"] is True
+    assert data["roadmap"]["title"] == "New Title"
+    assert _in_memory_roadmaps["r1"]["title"] == "New Title"
+

@@ -7,7 +7,7 @@
 A modern React-based educational platform built with cutting-edge technologies for optimal performance and accessibility. Features AI-powered learning tools with a beautiful, responsive interface.
 
 <!-- Badges: update badge URLs to point to your CI / coverage / deploy if available -->
-[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=white)](https://reactjs.org) [![Vite](https://img.shields.io/badge/Vite-6.3.5-646cff?logo=vite&logoColor=white)](https://vitejs.dev) [![License](https://img.shields.io/badge/License-MIT-green.svg)](../docs/LICENSE)
+[![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=white)](https://reactjs.org) [![Vite](https://img.shields.io/badge/Vite-6.4.2-646cff?logo=vite&logoColor=white)](https://vitejs.dev) [![License](https://img.shields.io/badge/License-MIT-green.svg)](../docs/LICENSE)
 
 
 ## 🌟 Key Features
@@ -95,9 +95,9 @@ After deployment:
 client/
 ├── index.html              # Entry point with React root
 ├── package.json            # Dependencies & scripts
-├── vite.config.ts          # Vite configuration with React plugin
-├── tailwind.config.js      # TailwindCSS v4.1.12 setup
-├── postcss.config.js       # PostCSS with Autoprefixer
+├── vite.config.ts          # Vite configuration with React and Tailwind plugins
+├── tailwind.config.js      # TailwindCSS v4.3.0 setup
+├── postcss.config.js       # PostCSS configuration
 ├── eslint.config.js        # ESLint v9 configuration
 ├── vercel.json             # Vercel deployment configuration
 ├── .env.example            # Environment variables template
@@ -120,7 +120,7 @@ client/
     │   │   └── Sidebar.jsx # Mobile sidebar navigation
     │   └── ui/            # Reusable UI component library
     │       ├── badge.jsx  # Status and category badges
-    │       ├── button.jsx # Button variants with CVA
+    │       ├── button.jsx, button.test.jsx # Button variants with CVA and tests
     │       ├── card.jsx   # Content cards with header/footer
     │       ├── input.jsx  # Form input components
     │       ├── progress.jsx # Progress bars and indicators
@@ -131,24 +131,21 @@ client/
     │       ├── ScrollToTop.jsx # Auto-scroll component
     │       ├── OfflineIndicator.jsx # Network status indicator
     │       └── custom-css/ # Custom CSS modules
-    │           ├── LoadingIndicator.css
-    │           └── PageTransition.css
     ├── hooks/             # Custom React hooks
     │   ├── helper.js      # API base URL helper
     │   ├── useAuth.js     # Firebase authentication hook
     │   └── useResponsive.js # Responsive design utilities
     ├── lib/               # Core utilities and configuration
-    │   ├── api.js         # Axios API client & endpoints
+    │   ├── api.js, api.test.js # Centralized API client, useAPICall hook & tests
+    │   ├── offlineStorage.js, offlineStorage.test.js # Offline storage queue & tests
     │   ├── firebase.js    # Firebase v12 configuration
-    │   └── utils.js       # Utility functions and helpers
+    │   └── utils.js, utils.test.js # Helper functions & tests
     └── pages/             # Route-based page components
         ├── Home.jsx       # Landing page with hero section
         ├── Dashboard.jsx  # User dashboard and analytics
-        ├── auth/          # Authentication pages
-        │   ├── Login.jsx  # User login with Firebase
-        │   └── Signup.jsx # User registration
+        ├── auth/          # Authentication pages (Login.jsx, Signup.jsx)
         └── tools/         # AI-powered learning tools
-            ├── DoubtSolving.jsx    # AI chatbot for Q&A
+            ├── DoubtSolving.jsx, DoubtSolving.test.jsx # AI chatbot for Q&A & tests
             ├── Quizzes.jsx         # Quiz generation & scoring
             ├── ConversationalTutor.jsx # AI tutoring system
             ├── Roadmap.jsx         # Learning path generator
@@ -187,9 +184,9 @@ The `package.json` scripts are small but important — here's what each does and
 - `npm run dev` — Starts Vite dev server with HMR for local development (use this most of the time).
 - `npm run build` — Produces production-ready static assets in `dist/` (run before deploy).
 - `npm run preview` — Serves the production build locally for smoke testing.
+- `npm run test` — Runs the Vitest test suite once across all unit and component tests.
+- `npm run test:watch` — Runs Vitest in interactive watch mode for TDD.
 - `npm run lint` — Runs ESLint across the project; fix issues before committing.
-
-Add `format` or `test` scripts if you introduce Prettier or test runners.
 
 ## Routing (how routes are organized)
 
@@ -264,18 +261,15 @@ We use modern JS features; Vite + browserslist handle transpilation. Add specifi
 
 ## Testing
 
-Recommended test stack for frontend:
-- Unit & component tests: `vitest` + `@testing-library/react`
-- End-to-end tests: `cypress` or `playwright`
+The frontend includes a configured **Vitest** test suite with **happy-dom** and **@testing-library/react**:
+- Unit tests: [`api.test.js`](file:///d:/_Deployed_Projects_Vercel/edvanta/client/src/lib/api.test.js), [`utils.test.js`](file:///d:/_Deployed_Projects_Vercel/edvanta/client/src/lib/utils.test.js), [`offlineStorage.test.js`](file:///d:/_Deployed_Projects_Vercel/edvanta/client/src/lib/offlineStorage.test.js)
+- Component tests: [`button.test.jsx`](file:///d:/_Deployed_Projects_Vercel/edvanta/client/src/components/ui/button.test.jsx), [`DoubtSolving.test.jsx`](file:///d:/_Deployed_Projects_Vercel/edvanta/client/src/pages/tools/DoubtSolving.test.jsx)
 
-Quick start for tests:
-
+Commands:
 ```bash
-npm install -D vitest @testing-library/react cypress
-npm run test:unit   # add this script if you scaffold tests
+npm run test        # Run complete Vitest suite (28 passing tests)
+npm run test:watch  # Interactive watch mode during development
 ```
-
-Add CI integration (GitHub Actions) to run tests on PRs.
 
 ## Coding style & linting
 
@@ -288,41 +282,38 @@ Add CI integration (GitHub Actions) to run tests on PRs.
 
 ### **Core Framework**
 - **React 18.3.1** - Modern React with hooks, Suspense and concurrent features
-- **Vite 6.3.5** - Next-generation frontend build tool with HMR
+- **Vite 6.4.2** - Next-generation frontend build tool with HMR
 - **React Router DOM 7.8.0** - Declarative routing with nested route support
 
 ### **Styling & UI**
-- **TailwindCSS 4.1.12** - Utility-first CSS framework with JIT compiler
+- **TailwindCSS 4.3.0** - Utility-first CSS framework with Vite integration plugin
 - **Radix UI Components** - Accessible, unstyled component primitives
   - `@radix-ui/react-progress` - Progress indicators
   - `@radix-ui/react-slot` - Component composition utilities
   - `@radix-ui/react-tabs` - Tab navigation components
 - **Lucide React 0.539.0** - Beautiful, customizable icon library
 - **Class Variance Authority 0.7.1** - Component variant utilities
-- **Clsx 2.1.1 + Tailwind Merge 3.3.1** - Conditional class name utilities
+- **Clsx 2.1.1 + Tailwind Merge 3.6.0** - Conditional class name utilities
 
 ### **State & Data Management**
 - **Firebase 12.1.0** - Authentication, Firestore database and storage
 - **Axios 1.11.0** - Promise-based HTTP client for API communication
-- **Custom React Hooks** - Authentication, responsive design utilities
+- **Custom React Hooks** - Authentication, responsive design, and `useAPICall` async state hook
 
-### **Development & Build Tools**
+### **Testing & Code Quality**
+- **Vitest 4.1.6** - Fast test runner with happy-dom environment
+- **@testing-library/react 16.3.2** - Component testing utilities
 - **ESLint 9.9.1** - Code linting with modern React rules
-- **PostCSS 8.5.6** - CSS processing with Autoprefixer
-- **TailwindCSS Plugins**:
-  - `@tailwindcss/forms` - Form styling utilities
-  - `@tailwindcss/typography` - Rich text formatting
-  - `@tailwindcss/vite` - Vite integration plugin
-- **TypeScript Support** - Type checking for configuration files
-- **Vercel Integration** - Optimized deployment configuration
 
 ## 🔧 Available Scripts
 
 ```bash
-npm run dev      # Start development server (localhost:5173)
-npm run build    # Build for production
-npm run preview  # Preview production build locally
-npm run lint     # Run ESLint code checking
+npm run dev         # Start development server (localhost:5173)
+npm run build       # Build for production
+npm run preview     # Preview production build locally
+npm run test        # Run Vitest unit & component tests
+npm run test:watch  # Interactive test watch mode
+npm run lint        # Run ESLint code checking
 ```
 
 ## 🌐 Progressive Web App (PWA) Features
@@ -352,12 +343,14 @@ The application includes simple offline functionality:
 The client communicates with the Edvanta backend through a centralized API client (`lib/api.js`):
 
 ### **Endpoints**
-- **Chatbot**: `/api/chat`, `/api/chat/history/{user_email}`
-- **Quizzes**: `/api/quizzes/generate`, `/api/quizzes/score`
-- **Tutoring**: `/api/tutor/ask`, `/api/tutor/voice`
-- **Roadmaps**: `/api/roadmap/generate`, `/api/roadmap/user/{user_email}`
-- **Analytics**: `/api/user-stats`
-- **Resume Analyzer**: `/api/resume/analyze`
+- **Chatbot**: `POST /api/chat/message`, `GET /api/chat/loadChat`
+- **Quizzes**: `POST /api/quizzes/generate`, `POST /api/quizzes/submit`, `GET/POST /api/tools/quizzes`, `GET/POST/DELETE /api/quiz-history`
+- **Tutoring**: `POST /api/tutor/ask`, `POST /api/tutor/session/start`, `GET /api/tutor/voice/connection`
+- **Roadmaps**: `POST /api/roadmap/generate`, `GET /api/roadmap/user`, `GET/PUT/DELETE /api/roadmap/{id}`, `GET /api/roadmap/download/{id}`
+- **Analytics**: `GET /api/user-stats`
+- **Resume Analyzer**: `POST /api/resume/analyze`, `GET /api/resume/history`, `DELETE /api/resume/history/{id}`
+- **Videos**: `GET /api/videos/search` (and client-side YouTube API fallback)
+- **Health**: `GET /api/health`, `GET /api/runtime-features`
 
 ### **Environment Detection**
 The app automatically detects environment and switches API URLs:
